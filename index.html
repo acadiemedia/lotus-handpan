@@ -201,6 +201,8 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   </div>
   <input type="file" id="fileSamples" accept="audio/*,.wav,.mp3,.ogg,.flac,.m4a,.aac" multiple style="display:none">
   <div class="hint">Use your own handpan recordings. Name them like <b>D3.wav</b>, <b>F#4.mp3</b>, or just <b>ding.wav</b> — the app matches filenames to pads and pitch-shifts neighbours. Files picked here stay on this device.</div>
+  <div class="row" style="margin-top:12px"><div class="grow"><div class="name">Instrument</div><div class="meta">built-in tone, used when no samples are loaded</div></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap" id="instBtns"></div>
   <label class="ck"><input type="checkbox" id="setEcho"> Hear sound when mic hears a note <span class="pill">speakers can re-trigger</span></label>
   <label class="ck" style="align-items:flex-start;flex-wrap:wrap">Mic sensitivity <input type="range" id="setSens" min="1" max="10" step="1" value="5"></label>
   <div class="hint">Watch the two bars under the waveform while you play a note: <b>vol</b> must fill past its marker, and <b>onset</b> must tick ✓ — on the strike attack or a clear jump in level. Raise sensitivity until both tick ✓ on soft strikes. From sensitivity 4 up, one clear note becomes a pad instantly; 1–3 asks for a second strike to confirm.</div>
@@ -420,7 +422,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   var noteReadout=$('#noteReadout'), meterCanvas=$('#meterCanvas'), toastEl=$('#toast');
   var btnListen=$('#btnListen'), btnRec=$('#btnRec'), btnTeach=$('#btnTeach'), btnSongs=$('#btnSongs'), btnSet=$('#btnSet'), btnEdit=$('#btnEdit'), btnHarmony=$('#btnHarmony');
 
-  var settings={echo:false, sensitivity:5, ghost:true, haptic:true, harmony:false, layoutStyle:'handpan'};
+  var settings={echo:false, sensitivity:5, ghost:true, haptic:true, harmony:false, layoutStyle:'handpan', instrument:'handpan'};
   try{ var st=localStorage.getItem('handpan.settings.v1'); if(st) settings=Object.assign(settings, JSON.parse(st)); }catch(e){}
   function saveSettings(){ try{ localStorage.setItem('handpan.settings.v1', JSON.stringify(settings)); }catch(e){} }
   function saveLayout(){ try{ localStorage.setItem('handpan.layout.v1', JSON.stringify(state.layout)); }catch(e){} }
@@ -551,34 +553,52 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     src.start();
   }
 
+  var INSTRUMENTS={
+    handpan:{name:'Handpan', dur:1.9, detune:1.0007, parts:[[1,0.85,1],[2.008,0.55,0.75],[3.015,0.3,0.45],[4.96,0.12,0.3]], noise:{amp:0.16,mult:8,q:0.9,dur:0.09}},
+    crystal:{name:'Crystal', dur:3.2, detune:1.001, parts:[[1,0.9,1],[2.76,0.5,0.8],[5.4,0.3,0.6],[8.9,0.15,0.4]], noise:{amp:0.1,mult:14,q:1.4,dur:0.12}},
+    marimba:{name:'Marimba', dur:0.9, parts:[[1,0.9,0.5],[3.99,0.45,0.28],[9.2,0.15,0.12]], noise:{amp:0.2,mult:12,q:0.7,dur:0.04}},
+    kalimba:{name:'Kalimba', dur:1.2, parts:[[1,0.9,0.7],[2.02,0.4,0.4],[5.4,0.22,0.2],[8.1,0.1,0.12]], noise:{amp:0.28,mult:16,q:1.2,dur:0.03}},
+    steel:{name:'Steel drum', dur:1.6, parts:[[1,0.85,1],[2.0,0.7,0.6],[3.0,0.3,0.4],[4.0,0.15,0.3]], noise:{amp:0.18,mult:10,q:1.0,dur:0.06}},
+    harp:{name:'Harp', dur:2.4, detune:1.0004, parts:[[1,0.9,1],[2,0.5,0.7],[3,0.3,0.5],[4,0.18,0.35],[5,0.1,0.25],[6,0.06,0.2]], noise:{amp:0.06,mult:20,q:1.5,dur:0.03}},
+    musicbox:{name:'Music box', dur:1.4, parts:[[1,0.85,1],[4.2,0.4,0.6],[7.1,0.2,0.4],[11,0.1,0.25]], noise:{amp:0.1,mult:22,q:1.6,dur:0.02}},
+    bell:{name:'Bell', dur:3.6, detune:1.0012, parts:[[1,0.8,1],[2.4,0.5,0.9],[3.9,0.3,0.7],[5.4,0.2,0.5],[8.2,0.1,0.3]], noise:{amp:0.08,mult:18,q:1.3,dur:0.03}},
+    guitar:{name:'Guitar', dur:1.8, parts:[[1,0.9,1],[2,0.45,0.6],[3,0.25,0.4],[4,0.14,0.28],[5,0.08,0.2]], noise:{amp:0.25,mult:16,q:0.8,dur:0.02}},
+    organ:{name:'Organ', dur:1.5, atk:0.02, parts:[[1,0.7,1],[2,0.5,1],[3,0.35,1],[4,0.25,1],[6,0.15,1],[8,0.1,1]]},
+    pad:{name:'Pad', dur:3.0, wave:'triangle', atk:0.15, detune:1.003, parts:[[1,0.6,1],[1.5,0.3,1],[2,0.4,1],[3,0.2,1],[4,0.15,1]]},
+    flute:{name:'Flute', dur:1.6, atk:0.06, parts:[[1,0.9,1],[2,0.1,0.8],[3,0.05,0.6]], noise:{amp:0.05,mult:12,q:0.6,dur:0.08}}
+  };
   function synthNote(midi, vel, isDing){
+    var inst=INSTRUMENTS[settings.instrument]||INSTRUMENTS.handpan;
     var f=HP.noteToFreq(midi), t=ctx.currentTime;
-    var dur=isDing?3.0:1.8;
+    var dur=inst.dur*(isDing?1.6:1);
+    var atk=inst.atk||0.005;
     var bus=ctx.createGain(); bus.gain.value=1;
     bus.connect(master); bus.connect(verb);
-    var parts = isDing ? [[1,1,1],[2.005,0.42,0.85],[3.01,0.2,0.5],[4.98,0.09,0.35]]
-                       : [[1,0.85,1],[2.008,0.55,0.75],[3.015,0.3,0.45],[4.96,0.12,0.3]];
-    parts.forEach(function(p){
-      var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f*p[0];
+    (inst.parts||[]).forEach(function(p){
+      var o=ctx.createOscillator(); o.type=inst.wave||'sine'; o.frequency.value=f*p[0];
       var g=ctx.createGain();
       g.gain.setValueAtTime(0.0001,t);
-      g.gain.exponentialRampToValueAtTime(Math.max(0.0002,p[1]*vel*0.28), t+0.005);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002,p[1]*vel*0.28), t+atk);
       g.gain.exponentialRampToValueAtTime(0.0001, t+dur*p[2]);
       o.connect(g); g.connect(bus);
       o.start(t); o.stop(t+dur+0.15);
     });
-    var o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=f*1.0007;
-    var g2=ctx.createGain();
-    g2.gain.setValueAtTime(0.0001,t);
-    g2.gain.exponentialRampToValueAtTime(Math.max(0.0002,vel*0.22), t+0.006);
-    g2.gain.exponentialRampToValueAtTime(0.0001, t+dur*0.9);
-    o2.connect(g2); g2.connect(bus); o2.start(t); o2.stop(t+dur+0.15);
-    var src=ctx.createBufferSource(); src.buffer=noiseBuf(0.09);
-    var bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=Math.min(6500,f*8); bp.Q.value=0.9;
-    var ng=ctx.createGain();
-    ng.gain.setValueAtTime(vel*0.16,t);
-    ng.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
-    src.connect(bp); bp.connect(ng); ng.connect(bus); src.start(t); src.stop(t+0.1);
+    if(inst.detune){
+      var o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=f*inst.detune;
+      var g2=ctx.createGain();
+      g2.gain.setValueAtTime(0.0001,t);
+      g2.gain.exponentialRampToValueAtTime(Math.max(0.0002,vel*0.22), t+atk+0.001);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t+dur*0.9);
+      o2.connect(g2); g2.connect(bus); o2.start(t); o2.stop(t+dur+0.15);
+    }
+    if(inst.noise){
+      var src=ctx.createBufferSource(); src.buffer=noiseBuf(inst.noise.dur);
+      var bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=Math.min(6500,f*(inst.noise.mult||8)); bp.Q.value=inst.noise.q||0.9;
+      var ng=ctx.createGain();
+      ng.gain.setValueAtTime(vel*(inst.noise.amp||0.16),t);
+      ng.gain.exponentialRampToValueAtTime(0.0001,t+inst.noise.dur*0.8);
+      src.connect(bp); bp.connect(ng); ng.connect(bus); src.start(t); src.stop(t+inst.noise.dur*1.1);
+    }
   }
 
   function playNote(midi, vel, isDing){
@@ -1570,6 +1590,20 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     });
     var d=$('#layoutDesc'); if(d) d.textContent=layoutInfo(id).desc;
   }
+  function syncInstBtns(){
+    var host=$('#instBtns'); if(!host) return;
+    host.innerHTML='';
+    Object.keys(INSTRUMENTS).forEach(function(id){
+      var b=document.createElement('button');
+      b.className='mini'+(id===settings.instrument?' primary':'');
+      b.textContent=INSTRUMENTS[id].name;
+      b.onclick=function(){
+        settings.instrument=id; saveSettings(); syncInstBtns();
+        toast(INSTRUMENTS[id].name);
+      };
+      host.appendChild(b);
+    });
+  }
   document.querySelectorAll('[data-layout]').forEach(function(b){
     b.onclick=function(){
       settings.layoutStyle=b.dataset.layout; saveSettings();
@@ -1587,6 +1621,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   state.layoutStyle=layoutInfo(settings.layoutStyle).id;
   btnHarmony.classList.toggle('on', settings.harmony);
   syncLayoutBtns();
+  syncInstBtns();
 
   window.addEventListener('resize', function(){ renderPads(); });
   window.addEventListener('hashchange', importFromHash);
