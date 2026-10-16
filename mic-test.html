@@ -1,0 +1,57 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mic Test</title>
+<style>body{font:16px system-ui;margin:0;padding:20px;background:#111;color:#eee}
+#bar{height:34px;background:#333;border-radius:6px;overflow:hidden;margin:12px 0}
+#fill{height:100%;width:0;background:#3fbcab;transition:width .05s}
+#log{white-space:pre-wrap;font-size:13px;color:#9fe;background:#000;padding:12px;border-radius:6px;line-height:1.5}
+button{font-size:18px;padding:12px 20px;border-radius:10px;border:0;background:#1f9e8f;color:#fff}
+#num{font-size:14px;color:#9dc2bb;margin-bottom:8px}
+</style></head>
+<body>
+<h3>Microphone test</h3>
+<button id="go">Start mic</button>
+<div id="num">&mdash;</div>
+<div id="bar"><div id="fill"></div></div>
+<div id="log">Ready.</div>
+<script>
+var log=function(s){document.getElementById('log').textContent=s;};
+document.getElementById('go').onclick=async function(){
+  var fill=document.getElementById('fill'), num=document.getElementById('num');
+  var lines=[];
+  try{
+    lines.push('secure context: '+window.isSecureContext);
+    lines.push('origin: '+location.origin);
+    log(lines.join('\n'));
+    var stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    var track=stream.getAudioTracks()[0];
+    var st={}; try{st=track.getSettings();}catch(e){}
+    lines.push('got stream');
+    lines.push('track: '+track.label);
+    lines.push('settings: '+JSON.stringify(st));
+    var ctx=new (window.AudioContext||window.webkitAudioContext)();
+    await ctx.resume();
+    lines.push('ctx state: '+ctx.state+'  sampleRate: '+ctx.sampleRate);
+    log(lines.join('\n'));
+    var src=ctx.createMediaStreamSource(stream);
+    var an=ctx.createAnalyser(); an.fftSize=2048;
+    src.connect(an);
+    var buf=new Float32Array(an.fftSize);
+    var peak=0;
+    function tick(){
+      an.getFloatTimeDomainData(buf);
+      var s=0; for(var i=0;i<buf.length;i++) s+=buf[i]*buf[i];
+      var rms=Math.sqrt(s/buf.length);
+      if(rms>peak) peak=rms;
+      fill.style.width=Math.min(100,rms*400)+'%';
+      num.textContent='level '+rms.toFixed(4)+'   peak '+peak.toFixed(4)+'   ctx '+ctx.state;
+      requestAnimationFrame(tick);
+    }
+    tick();
+  }catch(e){
+    lines.push('ERROR: '+e.name+': '+e.message);
+    log(lines.join('\n'));
+  }
+};
+</script>
+</body></html>
