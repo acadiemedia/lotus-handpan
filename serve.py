@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import sys, functools, http.server, socketserver
+import sys, functools, http.server, socketserver, os
 
-ROOT = "/root/handpan"
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
 class H(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):

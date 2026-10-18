@@ -1,2 +1,4 @@
 versions/
 samples/
+.lotus.log
+.lotus.pid

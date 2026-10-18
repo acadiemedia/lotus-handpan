@@ -1,0 +1,244 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# ==============================================================================
+# ChloeOS Lotus — Handpan Daemon Controller (start | stop | status | restart)
+# Accessible from Native Termux Host and PRoot Debian environments.
+# ==============================================================================
+set -u
+
+# --- Canonical Symlink Resolution ---
+TARGET_FILE="${BASH_SOURCE[0]}"
+while [ -L "$TARGET_FILE" ]; do
+    TARGET_DIR="$(cd -P "$(dirname "$TARGET_FILE")" >/dev/null 2>&1 && pwd)"
+    TARGET_FILE="$(readlink "$TARGET_FILE")"
+    [[ "$TARGET_FILE" != /* ]] && TARGET_FILE="$TARGET_DIR/$TARGET_FILE"
+done
+DIR="$(cd -P "$(dirname "$TARGET_FILE")" >/dev/null 2>&1 && pwd)"
+
+SERVER="$DIR/serve.py"
+PORT="${LOTUS_PORT:-8765}"
+PIDFILE="$DIR/.lotus.pid"
+LOGFILE="$DIR/.lotus.log"
+FALLBACK_IP="${LOTUS_FALLBACK_IP:-100.109.199.2}"
+
+# Determine Python binary
+if [ -n "${PYTHON:-}" ] && command -v "$PYTHON" >/dev/null 2>&1; then
+    PY="$PYTHON"
+elif command -v python3 >/dev/null 2>&1; then
+    PY="python3"
+elif [ -x "/data/data/com.termux/files/usr/bin/python3" ]; then
+    PY="/data/data/com.termux/files/usr/bin/python3"
+elif [ -x "/usr/bin/python3" ]; then
+    PY="/usr/bin/python3"
+else
+    PY="python3"
+fi
+
+# ANSI Colors
+CYAN='\033[0;36m'
+B_CYAN='\033[1;36m'
+GREEN='\033[0;32m'
+B_GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+pid() {
+    local p=""
+    if [ -f "$PIDFILE" ]; then
+        p="$(tr -d -c '0-9' < "$PIDFILE" 2>/dev/null)"
+    fi
+    if [ -z "$p" ] || ! kill -0 "$p" 2>/dev/null; then
+        # Self-healing discovery: check for live serve.py on this port
+        local found
+        found="$(pgrep -f "python.*serve\.py.*$PORT" 2>/dev/null | head -1)"
+        if [ -n "$found" ]; then
+            p="$found"
+            echo "$p" > "$PIDFILE"
+        fi
+    fi
+    echo "$p"
+}
+
+is_running() {
+    local p
+    p="$(pid)"
+    [ -n "$p" ] && kill -0 "$p" 2>/dev/null
+}
+
+net_ip() {
+    local ip=""
+    # 1. Try Python socket probe (works inside PRoot and Termux host)
+    if command -v "$PY" >/dev/null 2>&1; then
+        ip="$("$PY" -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('8.8.8.8', 80)); print(s.getsockname()[0]); s.close()" 2>/dev/null || true)"
+    fi
+    # 2. Try ip route / ip addr if python failed
+    if [ -z "$ip" ] || [ "$ip" = "127.0.0.1" ]; then
+        ip="$(ip -4 addr 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1 || true)"
+    fi
+    # 3. Fallback to pre-configured node IP
+    if [ -z "$ip" ]; then
+        ip="$FALLBACK_IP"
+    fi
+    echo "$ip"
+}
+
+start() {
+    if is_running; then
+        local p; p="$(pid)"
+        local ip; ip="$(net_ip)"
+        echo -e "${YELLOW}[!] Lotus Handpan is already running.${NC} (PID: ${BOLD}$p${NC}, Port: ${BOLD}$PORT${NC})"
+        echo -e "    ${CYAN}Local URL:${NC} http://localhost:$PORT"
+        [ -n "$ip" ] && echo -e "    ${CYAN}LAN URL:  ${NC} http://$ip:$PORT"
+        echo -e "    ${CYAN}App Web:  ${NC} http://localhost:$PORT/index.html"
+        return 0
+    fi
+
+    rm -f "$PIDFILE"
+
+    if ! command -v "$PY" >/dev/null 2>&1 && [ ! -x "$PY" ]; then
+        echo -e "${RED}[ERROR] Python binary '$PY' not found.${NC}"
+        exit 1
+    fi
+
+    if [ ! -f "$SERVER" ]; then
+        echo -e "${RED}[ERROR] Server script missing: $SERVER${NC}"
+        exit 1
+    fi
+
+    echo -e "${B_CYAN}[CHLOEOS]${NC} Starting Lotus Handpan on port ${BOLD}$PORT${NC}..."
+
+    if command -v setsid >/dev/null 2>&1; then
+        setsid "$PY" "$SERVER" "$PORT" >> "$LOGFILE" 2>&1 &
+    else
+        nohup "$PY" "$SERVER" "$PORT" >> "$LOGFILE" 2>&1 &
+    fi
+    local new_pid=$!
+    disown "$new_pid" 2>/dev/null || true
+    echo "$new_pid" > "$PIDFILE"
+
+    sleep 1
+
+    if is_running; then
+        local ip; ip="$(net_ip)"
+        echo -e "${B_GREEN}[  OK  ]${NC} Lotus Handpan online! (PID: ${BOLD}$new_pid${NC})"
+        echo -e "    ${CYAN}Local: ${NC} ${BOLD}http://localhost:$PORT${NC}"
+        [ -n "$ip" ] && echo -e "    ${CYAN}Phone: ${NC} ${BOLD}http://$ip:$PORT${NC}"
+        echo -e "    ${CYAN}App:   ${NC} ${BOLD}http://localhost:$PORT/index.html${NC}"
+        echo -e "    ${CYAN}Log:   ${NC} $LOGFILE"
+    else
+        echo -e "${RED}[FAIL] Lotus failed to start. Review log: $LOGFILE${NC}"
+        rm -f "$PIDFILE"
+        exit 1
+    fi
+}
+
+stop() {
+    if ! is_running; then
+        rm -f "$PIDFILE"
+        echo -e "${YELLOW}[*] Lotus Handpan is not running.${NC}"
+        return 0
+    fi
+
+    local p; p="$(pid)"
+    echo -e "${B_CYAN}[CHLOEOS]${NC} Stopping Lotus Handpan (PID: $p)..."
+    kill "$p" 2>/dev/null
+
+    for _ in 1 2 3 4 5; do
+        kill -0 "$p" 2>/dev/null || break
+        sleep 0.3
+    done
+
+    if kill -0 "$p" 2>/dev/null; then
+        echo -e "${YELLOW}[*] Force terminating PID $p...${NC}"
+        kill -9 "$p" 2>/dev/null
+        sleep 0.3
+    fi
+
+    rm -f "$PIDFILE"
+
+    if kill -0 "$p" 2>/dev/null; then
+        echo -e "${RED}[ERROR] Could not stop PID $p.${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}[  OK  ]${NC} Lotus Handpan stopped."
+}
+
+status() {
+    if is_running; then
+        local p; p="$(pid)"
+        local ip; ip="$(net_ip)"
+        local uptime=""
+
+        if [ -r "/proc/$p/stat" ]; then
+            local p_mtime
+            p_mtime=$(stat -c %Y "/proc/$p" 2>/dev/null || echo "$(date +%s)")
+            local secs=$(( $(date +%s) - p_mtime ))
+            uptime=" (${secs}s)"
+        fi
+
+        if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/"; then
+            echo -e "${B_GREEN}[RUNNING]${NC} Lotus Handpan is ACTIVE${uptime} — PID: ${BOLD}$p${NC}, Port: ${BOLD}$PORT${NC}"
+        else
+            echo -e "${YELLOW}[WARN]${NC} Lotus process alive (PID $p), but port $PORT is not answering yet."
+        fi
+
+        echo -e "    ${CYAN}Local: ${NC} http://localhost:$PORT"
+        [ -n "$ip" ] && echo -e "    ${CYAN}Phone: ${NC} http://$ip:$PORT"
+        echo -e "    ${CYAN}App:   ${NC} http://localhost:$PORT/index.html"
+        echo -e "    ${CYAN}Log:   ${NC} $LOGFILE"
+    else
+        rm -f "$PIDFILE"
+        echo -e "${RED}[STOPPED]${NC} Lotus Handpan is inactive."
+    fi
+}
+
+logs() {
+    if [ -f "$LOGFILE" ]; then
+        tail -n 25 -f "$LOGFILE"
+    else
+        echo -e "${YELLOW}[*] No log file found at $LOGFILE${NC}"
+    fi
+}
+
+open_app() {
+    local ip; ip="$(net_ip)"
+    local target="http://localhost:$PORT/index.html"
+    echo -e "${B_CYAN}[CHLOEOS]${NC} Launching Lotus Handpan in browser..."
+    if command -v termux-open-url >/dev/null 2>&1; then
+        termux-open-url "$target"
+    elif [ -x "/system/bin/linker64" ] && [ -x "/data/data/com.termux/files/usr/bin/termux-open-url" ]; then
+        /system/bin/linker64 /data/data/com.termux/files/usr/bin/termux-open-url "$target"
+    else
+        echo -e "Open the app at: ${BOLD}$target${NC}"
+    fi
+}
+
+case "${1:-}" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        stop
+        sleep 0.5
+        start
+        ;;
+    logs)
+        logs
+        ;;
+    open)
+        open_app
+        ;;
+    *)
+        echo -e "${BOLD}Usage:${NC} $0 {start|stop|status|restart|logs|open}"
+        echo -e "       (Default Port: $PORT | Override with LOTUS_PORT=<port> $0 start)"
+        exit 1
+        ;;
+esac
