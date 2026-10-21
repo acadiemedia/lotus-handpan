@@ -113,8 +113,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-
 #detStat .msg{color:var(--bad)}
 #empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:2px dashed rgba(127,224,205,.45);border-radius:50%;background:rgba(255,255,255,.05);overflow:hidden;pointer-events:none;z-index:0;transition:border-color .3s ease}
 #empty.has-notes{border:none;background:transparent}
+#empty.has-notes .empty-yy{opacity:0;visibility:hidden}
 @keyframes yy-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.empty-yy{width:100%;height:100%;display:block;animation:yy-spin 20s linear infinite;transform-origin:50% 50%;filter:drop-shadow(0 0 24px rgba(82,203,187,.65))}
+.empty-yy{width:100%;height:100%;display:block;animation:yy-spin 20s linear infinite;transform-origin:50% 50%;filter:drop-shadow(0 0 24px rgba(82,203,187,.65));transition:opacity .35s ease,visibility .35s ease}
 #dock{display:flex;gap:6px;padding:10px 10px calc(12px + env(safe-area-inset-bottom))}
 .dockbtn{
   flex:1;min-height:54px;border-radius:16px;background:var(--panel);border:1px solid var(--line);
@@ -177,19 +178,17 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 .chip .x{width:19px;height:19px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;color:#b06a60;background:#fbeceb;border:1px solid #e7cdc9;cursor:pointer}
 .chip.ding{background:linear-gradient(180deg,#eafbf6,#cdeee7);border-color:#9fd8cc}
 
-/* YouTube Jam Along Drawer & Playlist */
-#videoDrawer{position:relative;z-index:10;width:100%;max-width:800px;margin:0 auto 4px;background:linear-gradient(180deg,rgba(16,48,42,0.95),rgba(10,32,28,0.98));border-top:1px solid rgba(127,224,205,0.25);border-bottom:1px solid rgba(127,224,205,0.25);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.45);transition:all .25s ease}
-.video-drawer-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px;font-size:11.5px;flex-wrap:wrap;background:rgba(255,255,255,0.03)}
-.video-info{display:flex;align-items:center;gap:7px;min-width:0;flex:1}
-.video-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:rgba(214,138,128,0.22);border:1px solid rgba(214,138,128,0.45);color:#fa9c9c;padding:2px 7px;border-radius:6px;white-space:nowrap}
-.video-title{color:#eef8f6;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
-.video-preset-badge{font-size:10px;background:rgba(63,188,171,0.18);border:1px solid rgba(63,188,171,0.4);color:#7fe0cd;padding:2px 8px;border-radius:99px;white-space:nowrap}
-.video-preset-badge.custom{color:#fad382;background:rgba(217,169,79,0.2);border-color:rgba(217,169,79,0.45)}
-.video-bar-actions{display:flex;align-items:center;gap:5px;margin-left:auto}
-.video-bar-actions .mini{padding:5px 9px;font-size:11px}
-.video-frame-wrap{position:relative;width:100%;aspect-ratio:16/9;max-height:210px;background:#000;overflow:hidden;transition:max-height .25s ease}
-.video-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-#videoDrawer.mini-mode .video-frame-wrap{max-height:0;aspect-ratio:unset}
+/* YouTube Minimalistic Player & Playlist */
+#videoDrawer{display:none;position:relative;z-index:10;width:100%;max-width:440px;margin:2px auto 6px;padding:0 8px;box-sizing:border-box}
+.video-minibar{display:flex;align-items:center;gap:6px;padding:2px 4px 5px;font-size:11px}
+.video-minititle{flex:1;min-width:0;color:#cdeee7;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+.minibtn{padding:4px 9px;border-radius:10px;font-size:10.5px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(127,224,205,0.3);color:#eef8f6;cursor:pointer;backdrop-filter:blur(8px);transition:all .15s ease;white-space:nowrap}
+.minibtn:hover{background:rgba(255,255,255,0.22);border-color:#52cbbb}
+.minibtn:active{transform:scale(0.95)}
+.minibtn.close{background:rgba(214,138,128,0.2);border-color:rgba(214,138,128,0.4);color:#fa9c9c;padding:4px 8px}
+.minibtn.close:hover{background:rgba(214,138,128,0.35)}
+.video-viewport{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,0.65), 0 0 0 1px rgba(127,224,205,0.3);background:#000}
+.video-viewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 .video-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;border-bottom:1px solid var(--line2)}
 .tab-btn{padding:8px 12px;border-radius:12px;font-size:11px;font-weight:600;color:var(--dim);background:var(--panel);border:1px solid var(--line);white-space:nowrap;cursor:pointer;transition:all .15s ease}
 .tab-btn.active{background:linear-gradient(180deg,#fbfffe,#e6f6f2);color:#2c6f66;border-color:var(--copper2);box-shadow:0 0 0 1px var(--copper2) inset}
@@ -203,6 +202,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 .video-card-artist{font-size:10.5px;color:var(--dim)}
 .video-card-scale{display:inline-block;font-size:9.5px;font-weight:700;color:#1f9e8f;background:rgba(63,188,171,.14);border:1px solid rgba(63,188,171,.3);padding:1px 6px;border-radius:4px;width:fit-content;margin-top:2px}
 .video-card-scale.custom{color:#e59835;background:rgba(217,169,79,.14);border-color:rgba(217,169,79,.4)}
+.video-card-scale.empty-tag{color:var(--dim);background:rgba(255,255,255,0.06);border-color:var(--line)}
 
 /* Zen Waterfall & Birds Glass Window */
 #zenBg{
@@ -261,23 +261,14 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 <div id="editBar"><span>Edit mode — tap a pad to remove</span> <button class="mini" id="btnUndoDelete" title="Undo deleted note" disabled style="opacity:0.4;cursor:not-allowed">↶ Undo</button> <button class="mini" id="editDone">done</button></div>
 
 <div id="videoDrawer" style="display:none">
-  <div class="video-drawer-bar">
-    <div class="video-info">
-      <span class="video-tag">▶ Jam Along</span>
-      <span id="videoTitle" class="video-title">No video active</span>
-      <span id="videoPresetBadge" class="video-preset-badge">Scale: Default</span>
-      <span id="videoSyncTag" class="pill" style="display:none;background:rgba(82,203,187,.22);color:#7fe0cd;font-weight:600;font-size:10px">⚡ Sync Active</span>
-    </div>
-    <div class="video-bar-actions">
-      <button class="mini" id="btnToggleAudioSync" title="Toggle synth audio accompaniment doubling">🔇 Audio Doubling: Off</button>
-      <button class="mini" id="btnVideoPlaylist" title="Open Playlist">🎵 Playlist</button>
-      <button class="mini primary" id="btnSaveVideoPreset" title="Save current handpan tuning as preset for this video">💾 Save Preset</button>
-      <button class="mini" id="btnToggleVideoSize" title="Toggle mini/full size">🗕 Mini</button>
-      <button class="mini danger" id="btnCloseVideo" title="Close video">✕</button>
-    </div>
+  <div class="video-minibar">
+    <span id="videoTitle" class="video-minititle">No video active</span>
+    <button class="minibtn" id="btnSaveVideoPreset" title="Save current handpan as preset for this video">💾 Save Pan</button>
+    <button class="minibtn" id="btnVideoPlaylist" title="Open Playlist">🎵 Songs</button>
+    <button class="minibtn close" id="btnCloseVideo" title="Close video">✕</button>
   </div>
-  <div id="videoFrameWrap" class="video-frame-wrap">
-    <iframe id="videoIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <div class="video-viewport">
+    <iframe id="videoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
   </div>
 </div>
 
@@ -2866,7 +2857,6 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       var pt=(performance.now()-state.playStart);
       var f=$('#teachBar .fill'); if(f) f.style.width=Math.min(100, pt/state.songDur*100)+'%';
     }
-    tickLiveSync();
     drawMeter();
     updateAndDrawRipples(performance.now());
     requestAnimationFrame(loop);
@@ -2877,34 +2867,34 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
    * ======================================================== */
   var VIDEO_PLAYLISTS = {
     changeofcolours: [
-      {id:"VOrhji0urv4", title:"Return to Your Heart", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
-      {id:"65oC9obpxc0", title:"Where Time Stands Still", artist:"Change of Colours", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
-      {id:"EFS6w8LpDUg", title:"Everything Changes", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
-      {id:"yXpAx3eazL4", title:"Becoming Whole", artist:"Change of Colours", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
-      {id:"TuIDBUlrzfM", title:"Between Earth and Sky", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
-      {id:"HStOxNcj2s4", title:"Memory of Now", artist:"Change of Colours", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
-      {id:"hBAiRtia3Og", title:"a fleeting moment in time", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
-      {id:"2sDH4WS0Guk", title:"Trust the Unfolding", artist:"Change of Colours", scale:"E Amara", midi:[52,59,62,64,66,67,69,71,74]},
-      {id:"CGc5X55amM4", title:"Calm Your Mind", artist:"Change of Colours", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
-      {id:"OKq9e0-LN3Y", title:"Quiet Warmth", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]}
+      {id:"VOrhji0urv4", title:"Return to Your Heart", artist:"Change of Colours"},
+      {id:"65oC9obpxc0", title:"Where Time Stands Still", artist:"Change of Colours"},
+      {id:"EFS6w8LpDUg", title:"Everything Changes", artist:"Change of Colours"},
+      {id:"yXpAx3eazL4", title:"Becoming Whole", artist:"Change of Colours"},
+      {id:"TuIDBUlrzfM", title:"Between Earth and Sky", artist:"Change of Colours"},
+      {id:"HStOxNcj2s4", title:"Memory of Now", artist:"Change of Colours"},
+      {id:"hBAiRtia3Og", title:"a fleeting moment in time", artist:"Change of Colours"},
+      {id:"2sDH4WS0Guk", title:"Trust the Unfolding", artist:"Change of Colours"},
+      {id:"CGc5X55amM4", title:"Calm Your Mind", artist:"Change of Colours"},
+      {id:"OKq9e0-LN3Y", title:"Quiet Warmth", artist:"Change of Colours"}
     ],
     maltemarten: [
-      {id:"Qf8ETxbQ8kQ", title:"Cortisol Reset (777 Hz)", artist:"Malte Marten", scale:"C Aegean", midi:[48,55,58,60,62,63,67,70,72]},
-      {id:"Ttaf1IYt6F4", title:"Nervous System Healing (777 Hz)", artist:"Malte Marten", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
-      {id:"71ZFILhE7ZY", title:"Find Inner Calm (1111 Hz)", artist:"Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
-      {id:"C2lortJpYjY", title:"Peace of Mind (999 Hz)", artist:"Malte Marten", scale:"C Aegean", midi:[48,55,58,60,62,63,67,70,72]},
-      {id:"o9CfuVwht5I", title:"Calm Nervous System (1111 Hz)", artist:"Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
-      {id:"qBKDPZ0btws", title:"When Love Speaks (1111 Hz)", artist:"Malte Marten", scale:"D Ashakiran", midi:[50,55,57,58,61,62,64,65,69]},
-      {id:"UPTrO039F5o", title:"Gratitude Prayer (1111 Hz)", artist:"Malte Marten", scale:"F# Nordlys", midi:[54,59,61,62,66,68,69,73,76]},
-      {id:"BULWmiX5nx8", title:"Trust Your Healing (1111 Hz)", artist:"Malte Marten", scale:"F# Kurd", midi:[54,61,62,64,66,68,69,71,73]},
-      {id:"B3WUW2jlpeE", title:"Medicine for the Heart (1111 Hz)", artist:"Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
-      {id:"PnBW_JiqJ2c", title:"Deep Stress Relief (1111 Hz)", artist:"Malte Marten", scale:"F# Low Pygmy", midi:[54,56,57,61,64,66,68,69,73]}
+      {id:"Qf8ETxbQ8kQ", title:"Cortisol Reset (777 Hz)", artist:"Malte Marten"},
+      {id:"Ttaf1IYt6F4", title:"Nervous System Healing (777 Hz)", artist:"Malte Marten"},
+      {id:"71ZFILhE7ZY", title:"Find Inner Calm (1111 Hz)", artist:"Malte Marten"},
+      {id:"C2lortJpYjY", title:"Peace of Mind (999 Hz)", artist:"Malte Marten"},
+      {id:"o9CfuVwht5I", title:"Calm Nervous System (1111 Hz)", artist:"Malte Marten"},
+      {id:"qBKDPZ0btws", title:"When Love Speaks (1111 Hz)", artist:"Malte Marten"},
+      {id:"UPTrO039F5o", title:"Gratitude Prayer (1111 Hz)", artist:"Malte Marten"},
+      {id:"BULWmiX5nx8", title:"Trust Your Healing (1111 Hz)", artist:"Malte Marten"},
+      {id:"B3WUW2jlpeE", title:"Medicine for the Heart (1111 Hz)", artist:"Malte Marten"},
+      {id:"PnBW_JiqJ2c", title:"Deep Stress Relief (1111 Hz)", artist:"Malte Marten"}
     ],
     collabs: [
-      {id:"4EwDBvI8BFw", title:"Emerald", artist:"Change of Colours × Malte Marten", scale:"E Amara", midi:[52,59,62,64,66,67,69,71,74]},
-      {id:"7S1cOhM7OmA", title:"Rising", artist:"Change of Colours × Malte Marten", scale:"C Aegean", midi:[48,55,58,60,62,63,67,70,72]},
-      {id:"hjIsCkUA8G8", title:"Change Of Colours (#97)", artist:"Change of Colours × Malte Marten", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
-      {id:"mlaGLiI7Gvg", title:"Reunion", artist:"Change of Colours (Julia) × Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]}
+      {id:"4EwDBvI8BFw", title:"Emerald", artist:"Change of Colours × Malte Marten"},
+      {id:"7S1cOhM7OmA", title:"Rising", artist:"Change of Colours × Malte Marten"},
+      {id:"hjIsCkUA8G8", title:"Change Of Colours (#97)", artist:"Change of Colours × Malte Marten"},
+      {id:"mlaGLiI7Gvg", title:"Reunion", artist:"Change of Colours (Julia) × Malte Marten"}
     ]
   };
 
@@ -2929,153 +2919,48 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   var currentVideo = null;
   var currentVideoTab = 'changeofcolours';
 
-  /* Live Video Playback & Score Synchronization */
-  var ytPlayer = null;
-  var liveVideoTime = -1;
-  var liveVideoPlaying = false;
-  var liveSyncScore = null;
-  var liveSyncNotes = [];
-  var liveSyncNextIdx = 0;
-  var liveSyncLastT = -1;
-  var liveSyncAudioOn = false;
-
-  window.addEventListener('message', function(ev){
-    try {
-      var data = typeof ev.data==='string' ? JSON.parse(ev.data) : ev.data;
-      if(data && data.event === 'infoDelivery' && data.info){
-        if(data.info.currentTime != null) liveVideoTime = data.info.currentTime;
-        if(data.info.playerState != null) liveVideoPlaying = (data.info.playerState === 1);
-      }
-    } catch(e){}
-  });
-
-  function triggerPadRippleOnMidi(midi){
-    var el = padEl(midi);
-    if(!el) return;
-    var rect = el.getBoundingClientRect();
-    if(rect && rect.width){
-      var cx = rect.left + rect.width / 2;
-      var cy = rect.top + rect.height / 2;
-      triggerWaterRipple(cx, cy);
-    }
-  }
-
-  function getLiveVideoTime(){
-    if(ytPlayer && typeof ytPlayer.getCurrentTime === 'function'){
-      try {
-        var s = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : 1;
-        if(s === 1 || s === 2) return ytPlayer.getCurrentTime();
-      } catch(e){}
-    }
-    return liveVideoTime >= 0 ? liveVideoTime : null;
-  }
-
-  function loadScoreForVideo(vid){
-    var tag = $('#videoSyncTag');
-    fetch('scores/' + vid + '.json')
-      .then(function(res){ return res.ok ? res.json() : null; })
-      .then(function(data){
-        if(data && data.notes && data.notes.length){
-          liveSyncScore = data;
-          liveSyncNotes = data.notes;
-          liveSyncNextIdx = 0;
-          liveSyncLastT = -1;
-          if(tag){
-            tag.style.display = 'inline-block';
-            tag.textContent = '⚡ Synced (' + data.notes.length + ' notes)';
-          }
-          toast('⚡ Live sync score loaded (' + data.notes.length + ' notes)');
-        } else {
-          liveSyncScore = null;
-          liveSyncNotes = [];
-          if(tag) tag.style.display = 'none';
-        }
-      })
-      .catch(function(){
-        liveSyncScore = null;
-        liveSyncNotes = [];
-        if(tag) tag.style.display = 'none';
-      });
-  }
-
-  function tickLiveSync(){
-    if(!currentVideo || !liveSyncNotes || !liveSyncNotes.length) return;
-    var t = getLiveVideoTime();
-    if(t == null || t < 0) return;
-
-    if(liveSyncLastT >= 0 && Math.abs(t - liveSyncLastT) > 1.2){
-      liveSyncNextIdx = 0;
-      while(liveSyncNextIdx < liveSyncNotes.length && liveSyncNotes[liveSyncNextIdx].t < t){
-        liveSyncNextIdx++;
-      }
-    }
-    liveSyncLastT = t;
-
-    // Anticipation glow (180ms ahead)
-    for(var a = liveSyncNextIdx; a < Math.min(liveSyncNextIdx + 3, liveSyncNotes.length); a++){
-      var an = liveSyncNotes[a];
-      var dt = an.t - t;
-      if(dt > 0 && dt <= 0.20){
-        flashPad(an.midi, 'anticip', Math.round(dt * 1000) + 40);
-      }
-    }
-
-    // Strike trigger
-    while(liveSyncNextIdx < liveSyncNotes.length && t >= liveSyncNotes[liveSyncNextIdx].t){
-      var n = liveSyncNotes[liveSyncNextIdx];
-      flashPad(n.midi, 'touchfx', 400);
-      triggerPadRippleOnMidi(n.midi);
-      if(liveSyncAudioOn){
-        playNote(n.midi, {dur: n.dur || 0.4});
-      }
-      liveSyncNextIdx++;
-    }
-  }
-
   function applyVideoPreset(trackOrId){
     var id = typeof trackOrId==='string' ? trackOrId : trackOrId.id;
     var track = typeof trackOrId==='object' ? trackOrId : findTrackById(id);
     var presets = loadVideoPresets();
     var custom = presets[id];
-    var layout = custom ? custom.layout : (track ? track.midi : null);
-    var scaleName = custom ? custom.scaleName : (track ? track.scale : 'Handpan');
-    if(!layout || !layout.length) return;
 
-    state.removedNotes=[];
-    saveRemovedNotes();
-    if(state.undoStack) state.undoStack=[];
-    updateUndoBtn();
-    state.noteFreqs={};
-    if(custom && custom.noteFreqs){
-      state.noteFreqs = Object.assign({}, custom.noteFreqs);
+    if(custom && custom.layout && custom.layout.length){
+      state.removedNotes=[];
+      saveRemovedNotes();
+      if(state.undoStack) state.undoStack=[];
+      updateUndoBtn();
+      state.noteFreqs = Object.assign({}, custom.noteFreqs || {});
+      setLayout(custom.layout.slice(), {silent:true});
+      saveLayout();
+      renderNoteList();
+
+      setTimeout(function(){
+        for(var j=0;j<custom.layout.length;j++){
+          flashPad(custom.layout[j], 'touchfx', 450);
+        }
+      }, 50);
+
+      toast('⭐ Loaded saved preset: ' + (custom.scaleName || 'Custom'));
     } else {
-      for(var i=0;i<layout.length;i++){
-        state.noteFreqs[layout[i]] = HP.noteToFreq(layout[i]);
-      }
+      // Empty handpan starting as the Yin-Yang
+      state.removedNotes=[];
+      saveRemovedNotes();
+      if(state.undoStack) state.undoStack=[];
+      updateUndoBtn();
+      state.noteFreqs={};
+      setLayout([]);
+      saveLayout();
+      renderNoteList();
+      toast('☯ Yin-Yang ready — build your pan for this song!');
     }
-    setLayout(layout.slice(), {silent:true});
-    saveLayout();
-    renderNoteList();
-
-    setTimeout(function(){
-      for(var j=0;j<layout.length;j++){
-        flashPad(layout[j], 'touchfx', 450);
-      }
-    }, 50);
-
-    var badge=$('#videoPresetBadge');
-    if(badge){
-      badge.textContent = 'Scale: ' + scaleName + (custom ? ' ⭐' : '');
-      badge.classList.toggle('custom', !!custom);
-    }
-    toast('Loaded ' + scaleName + (custom ? ' (saved preset)' : ''));
   }
 
   function saveCurrentAsVideoPreset(){
     if(!currentVideo){ toast('No video active to save preset for'); return; }
     if(!state.layout.length){ toast('No pads on board to save'); return; }
     var presets=loadVideoPresets();
-    var defScale = state.scaleInfo ? state.scaleInfo.scaleName : (currentVideo.scale || 'Custom');
+    var defScale = state.scaleInfo ? state.scaleInfo.scaleName : 'Custom Pan';
     var sName = defScale + ' (' + state.layout.length + ' pads)';
     presets[currentVideo.id] = {
       layout: state.layout.slice(),
@@ -3084,12 +2969,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       savedAt: Date.now()
     };
     storeVideoPresets(presets);
-    var badge=$('#videoPresetBadge');
-    if(badge){
-      badge.textContent = 'Scale: ' + sName + ' ⭐';
-      badge.classList.add('custom');
-    }
-    toast('Saved preset for ' + (currentVideo.title || 'this video') + '!');
+    toast('💾 Saved pan preset for ' + (currentVideo.title || 'this video') + '!');
     renderVideoPlaylist(currentVideoTab);
   }
 
@@ -3102,25 +2982,9 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(!drawer || !iframe) return;
 
     drawer.style.display = 'block';
-    drawer.classList.remove('mini-mode');
-    var btnSize = $('#btnToggleVideoSize');
-    if(btnSize) btnSize.textContent = '🗕 Mini';
-    iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?enablejsapi=1&autoplay=1&playsinline=1';
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?autoplay=1&playsinline=1';
     if(title) title.textContent = track.title + ' — ' + track.artist;
     applyVideoPreset(track);
-    loadScoreForVideo(track.id);
-
-    if(window.YT && window.YT.Player && !ytPlayer){
-      try {
-        ytPlayer = new YT.Player('videoIframe', {
-          events: {
-            'onStateChange': function(ev){
-              if(ev && ev.data != null) liveVideoPlaying = (ev.data === 1);
-            }
-          }
-        });
-      } catch(e){}
-    }
   }
 
   function closeVideo(){
@@ -3129,21 +2993,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(iframe) iframe.src = '';
     if(drawer) drawer.style.display = 'none';
     currentVideo = null;
-    liveSyncScore = null;
-    liveSyncNotes = [];
-    var tag = $('#videoSyncTag');
-    if(tag) tag.style.display = 'none';
     toast('Closed video');
-  }
-
-  function toggleVideoSize(){
-    var drawer = $('#videoDrawer');
-    if(!drawer) return;
-    drawer.classList.toggle('mini-mode');
-    var isMini = drawer.classList.contains('mini-mode');
-    var btn = $('#btnToggleVideoSize');
-    if(btn) btn.textContent = isMini ? '🗖 Expand' : '🗕 Mini';
-    toast(isMini ? 'Video minimized (audio still playing)' : 'Video expanded');
   }
 
   function renderVideoPlaylist(tab){
@@ -3172,14 +3022,14 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       var t = tracks[i];
       var custom = presets[t.id];
       var isAct = currentVideo && currentVideo.id === t.id;
-      var scaleLabel = custom ? (custom.scaleName + ' ⭐') : t.scale;
+      var scaleLabel = custom ? (custom.scaleName + ' ⭐') : '☯ Build your pan';
       var thumb = 'https://img.youtube.com/vi/' + t.id + '/mqdefault.jpg';
       html += '<div class="video-card' + (isAct ? ' active' : '') + '" data-vid="' + t.id + '">' +
         '<img class="video-thumb" src="' + thumb + '" alt="' + t.title + '" loading="lazy">' +
         '<div class="video-card-info">' +
           '<div class="video-card-title">' + t.title + '</div>' +
           '<div class="video-card-artist">' + t.artist + '</div>' +
-          '<span class="video-card-scale' + (custom ? ' custom' : '') + '">' + scaleLabel + '</span>' +
+          '<span class="video-card-scale' + (custom ? ' custom' : ' empty-tag') + '">' + scaleLabel + '</span>' +
         '</div>' +
       '</div>';
     }
@@ -3545,25 +3395,10 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       saveCurrentAsVideoPreset();
     };
   }
-  var btnToggleSize = $('#btnToggleVideoSize');
-  if(btnToggleSize){
-    btnToggleSize.onclick = function(){
-      toggleVideoSize();
-    };
-  }
   var btnCloseVid = $('#btnCloseVideo');
   if(btnCloseVid){
     btnCloseVid.onclick = function(){
       closeVideo();
-    };
-  }
-  var btnToggleAudioSync = $('#btnToggleAudioSync');
-  if(btnToggleAudioSync){
-    btnToggleAudioSync.onclick = function(){
-      liveSyncAudioOn = !liveSyncAudioOn;
-      this.classList.toggle('primary', liveSyncAudioOn);
-      this.textContent = liveSyncAudioOn ? '🔊 Audio Doubling: On' : '🔇 Audio Doubling: Off';
-      toast(liveSyncAudioOn ? 'Synth notes playing in sync with video' : 'Visual ghost hands only (video audio)');
     };
   }
   var btnLoadCustom = $('#btnLoadCustomVideo');
@@ -3581,9 +3416,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       var customTrack = {
         id: yId,
         title: tTitle,
-        artist: 'YouTube',
-        scale: state.scaleInfo ? state.scaleInfo.scaleName : 'Handpan',
-        midi: state.layout.length ? state.layout.slice() : [50,57,58,60,62,64,65,67,69]
+        artist: 'YouTube'
       };
       openVideo(customTrack);
       closeSheets();
@@ -3615,6 +3448,5 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   requestAnimationFrame(loop);
 })();
 </script>
-<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
