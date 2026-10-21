@@ -54,14 +54,13 @@ python3 serve.py 8765
 
 Open in your browser:
 - **Lotus Handpan:** `http://localhost:8765/index.html`
-- **Lotus Jam:** `http://localhost:8765/lotusjam.html`
 
 ---
 
 ## 🛠️ Architecture
 
-- `index.html`: Core single-file Lotus Handpan application with integrated Web Audio synthesis, interactive SVG pad geometry, and pitch tracking.
-- `lotusjam.html`: Lotus Jam companion app featuring multi-touch sequencing, recording, and jamming tools.
+- `index.html`: Core single-file Lotus Handpan application with integrated Web Audio synthesis, interactive SVG pad geometry, pitch tracking, and YouTube Jam Along engine with programmatic note synchronization.
+- `transcribe_handpan.py`: Acoustic signal processing and onset-pitch extraction engine using Librosa for automatic video-to-score transcription.
 - `serve.py`: High-performance HTTP server with zero-cache headers optimized for local development and real-time audio sample streaming.
 - `lotus`: Daemon manager (`start`, `stop`, `status`, `restart`) designed for Android Termux and PRoot sandboxes.
 

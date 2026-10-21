@@ -266,8 +266,10 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       <span class="video-tag">▶ Jam Along</span>
       <span id="videoTitle" class="video-title">No video active</span>
       <span id="videoPresetBadge" class="video-preset-badge">Scale: Default</span>
+      <span id="videoSyncTag" class="pill" style="display:none;background:rgba(82,203,187,.22);color:#7fe0cd;font-weight:600;font-size:10px">⚡ Sync Active</span>
     </div>
     <div class="video-bar-actions">
+      <button class="mini" id="btnToggleAudioSync" title="Toggle synth audio accompaniment doubling">🔇 Audio Doubling: Off</button>
       <button class="mini" id="btnVideoPlaylist" title="Open Playlist">🎵 Playlist</button>
       <button class="mini primary" id="btnSaveVideoPreset" title="Save current handpan tuning as preset for this video">💾 Save Preset</button>
       <button class="mini" id="btnToggleVideoSize" title="Toggle mini/full size">🗕 Mini</button>
@@ -2864,6 +2866,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       var pt=(performance.now()-state.playStart);
       var f=$('#teachBar .fill'); if(f) f.style.width=Math.min(100, pt/state.songDur*100)+'%';
     }
+    tickLiveSync();
     drawMeter();
     updateAndDrawRipples(performance.now());
     requestAnimationFrame(loop);
@@ -2925,6 +2928,109 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 
   var currentVideo = null;
   var currentVideoTab = 'changeofcolours';
+
+  /* Live Video Playback & Score Synchronization */
+  var ytPlayer = null;
+  var liveVideoTime = -1;
+  var liveVideoPlaying = false;
+  var liveSyncScore = null;
+  var liveSyncNotes = [];
+  var liveSyncNextIdx = 0;
+  var liveSyncLastT = -1;
+  var liveSyncAudioOn = false;
+
+  window.addEventListener('message', function(ev){
+    try {
+      var data = typeof ev.data==='string' ? JSON.parse(ev.data) : ev.data;
+      if(data && data.event === 'infoDelivery' && data.info){
+        if(data.info.currentTime != null) liveVideoTime = data.info.currentTime;
+        if(data.info.playerState != null) liveVideoPlaying = (data.info.playerState === 1);
+      }
+    } catch(e){}
+  });
+
+  function triggerPadRippleOnMidi(midi){
+    var el = padEl(midi);
+    if(!el) return;
+    var rect = el.getBoundingClientRect();
+    if(rect && rect.width){
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      triggerWaterRipple(cx, cy);
+    }
+  }
+
+  function getLiveVideoTime(){
+    if(ytPlayer && typeof ytPlayer.getCurrentTime === 'function'){
+      try {
+        var s = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : 1;
+        if(s === 1 || s === 2) return ytPlayer.getCurrentTime();
+      } catch(e){}
+    }
+    return liveVideoTime >= 0 ? liveVideoTime : null;
+  }
+
+  function loadScoreForVideo(vid){
+    var tag = $('#videoSyncTag');
+    fetch('scores/' + vid + '.json')
+      .then(function(res){ return res.ok ? res.json() : null; })
+      .then(function(data){
+        if(data && data.notes && data.notes.length){
+          liveSyncScore = data;
+          liveSyncNotes = data.notes;
+          liveSyncNextIdx = 0;
+          liveSyncLastT = -1;
+          if(tag){
+            tag.style.display = 'inline-block';
+            tag.textContent = '⚡ Synced (' + data.notes.length + ' notes)';
+          }
+          toast('⚡ Live sync score loaded (' + data.notes.length + ' notes)');
+        } else {
+          liveSyncScore = null;
+          liveSyncNotes = [];
+          if(tag) tag.style.display = 'none';
+        }
+      })
+      .catch(function(){
+        liveSyncScore = null;
+        liveSyncNotes = [];
+        if(tag) tag.style.display = 'none';
+      });
+  }
+
+  function tickLiveSync(){
+    if(!currentVideo || !liveSyncNotes || !liveSyncNotes.length) return;
+    var t = getLiveVideoTime();
+    if(t == null || t < 0) return;
+
+    if(liveSyncLastT >= 0 && Math.abs(t - liveSyncLastT) > 1.2){
+      liveSyncNextIdx = 0;
+      while(liveSyncNextIdx < liveSyncNotes.length && liveSyncNotes[liveSyncNextIdx].t < t){
+        liveSyncNextIdx++;
+      }
+    }
+    liveSyncLastT = t;
+
+    // Anticipation glow (180ms ahead)
+    for(var a = liveSyncNextIdx; a < Math.min(liveSyncNextIdx + 3, liveSyncNotes.length); a++){
+      var an = liveSyncNotes[a];
+      var dt = an.t - t;
+      if(dt > 0 && dt <= 0.20){
+        flashPad(an.midi, 'anticip', Math.round(dt * 1000) + 40);
+      }
+    }
+
+    // Strike trigger
+    while(liveSyncNextIdx < liveSyncNotes.length && t >= liveSyncNotes[liveSyncNextIdx].t){
+      var n = liveSyncNotes[liveSyncNextIdx];
+      flashPad(n.midi, 'touchfx', 400);
+      triggerPadRippleOnMidi(n.midi);
+      if(liveSyncAudioOn){
+        playNote(n.midi, {dur: n.dur || 0.4});
+      }
+      liveSyncNextIdx++;
+    }
+  }
 
   function applyVideoPreset(trackOrId){
     var id = typeof trackOrId==='string' ? trackOrId : trackOrId.id;
@@ -3002,6 +3108,19 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?enablejsapi=1&autoplay=1&playsinline=1';
     if(title) title.textContent = track.title + ' — ' + track.artist;
     applyVideoPreset(track);
+    loadScoreForVideo(track.id);
+
+    if(window.YT && window.YT.Player && !ytPlayer){
+      try {
+        ytPlayer = new YT.Player('videoIframe', {
+          events: {
+            'onStateChange': function(ev){
+              if(ev && ev.data != null) liveVideoPlaying = (ev.data === 1);
+            }
+          }
+        });
+      } catch(e){}
+    }
   }
 
   function closeVideo(){
@@ -3010,6 +3129,10 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(iframe) iframe.src = '';
     if(drawer) drawer.style.display = 'none';
     currentVideo = null;
+    liveSyncScore = null;
+    liveSyncNotes = [];
+    var tag = $('#videoSyncTag');
+    if(tag) tag.style.display = 'none';
     toast('Closed video');
   }
 
@@ -3434,6 +3557,15 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       closeVideo();
     };
   }
+  var btnToggleAudioSync = $('#btnToggleAudioSync');
+  if(btnToggleAudioSync){
+    btnToggleAudioSync.onclick = function(){
+      liveSyncAudioOn = !liveSyncAudioOn;
+      this.classList.toggle('primary', liveSyncAudioOn);
+      this.textContent = liveSyncAudioOn ? '🔊 Audio Doubling: On' : '🔇 Audio Doubling: Off';
+      toast(liveSyncAudioOn ? 'Synth notes playing in sync with video' : 'Visual ghost hands only (video audio)');
+    };
+  }
   var btnLoadCustom = $('#btnLoadCustomVideo');
   if(btnLoadCustom){
     btnLoadCustom.onclick = function(){
@@ -3483,5 +3615,6 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   requestAnimationFrame(loop);
 })();
 </script>
+<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
