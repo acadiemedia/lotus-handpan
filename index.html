@@ -189,6 +189,8 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 .minibtn.close:hover{background:rgba(214,138,128,0.35)}
 .video-viewport{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.55);background:#000;border-bottom:1px solid rgba(127,224,205,0.25)}
 .video-viewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+body.video-active:not(.mic-active) #meter,
+body.video-active:not(.mic-active) #detStat{display:none !important}
 
 /* YouTube Jam Along Sheet Window */
 #sheetVideoPlaylist .card{
@@ -261,13 +263,6 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   </div>
 </header>
 
-<div id="meter">
-  <canvas id="meterCanvas"></canvas>
-  <div id="noteReadout"></div>
-</div>
-<div id="detStat"></div>
-<div id="editBar"><span>Edit mode — tap a pad to remove</span> <button class="mini" id="btnUndoDelete" title="Undo deleted note" disabled style="opacity:0.4;cursor:not-allowed">↶ Undo</button> <button class="mini" id="editDone">done</button></div>
-
 <div id="videoDrawer" style="display:none">
   <div class="video-minibar">
     <span id="videoTitle" class="video-minititle">No video active</span>
@@ -280,6 +275,13 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     <iframe id="videoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
   </div>
 </div>
+
+<div id="meter">
+  <canvas id="meterCanvas"></canvas>
+  <div id="noteReadout"></div>
+</div>
+<div id="detStat"></div>
+<div id="editBar"><span>Edit mode — tap a pad to remove</span> <button class="mini" id="btnUndoDelete" title="Undo deleted note" disabled style="opacity:0.4;cursor:not-allowed">↶ Undo</button> <button class="mini" id="editDone">done</button></div>
 
 <div id="padWrap">
   <div id="pads">
@@ -1715,6 +1717,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       if(btnListen) btnListen.classList.add('on');
       if(btnLearn) btnLearn.classList.remove('on');
     }
+    document.body.classList.add('mic-active');
     track.t=0; track.frames=[]; track.hbAvg=null; track.rmsBase=null; track.cand=null;
     sustainTrack.midi=null; sustainTrack.count=0; sustainTrack.emitted=false;
     if(zenAudio && settings.zenSound) zenAudio.volume = 0.05;
@@ -1732,6 +1735,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     }
     sustainTrack.count=0; sustainTrack.emitted=false;
     analyser=null; state.listening=false;
+    document.body.classList.remove('mic-active');
     if(btnListen) btnListen.classList.remove('on');
     if(btnLearn) btnLearn.classList.remove('on');
     if(state.recording) stopRec();
@@ -2991,6 +2995,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(!drawer || !iframe) return;
 
     drawer.style.display = 'block';
+    document.body.classList.add('video-active');
     iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?autoplay=1&playsinline=1';
     if(title) title.textContent = track.title + ' — ' + track.artist;
     applyVideoPreset(track);
@@ -3002,6 +3007,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     var iframe = $('#videoIframe');
     if(iframe) iframe.src = '';
     if(drawer) drawer.style.display = 'none';
+    document.body.classList.remove('video-active');
     currentVideo = null;
     toast('Closed video');
     setTimeout(resizeRippleCanvases, 60);
