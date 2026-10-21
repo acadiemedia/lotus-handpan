@@ -180,12 +180,15 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 
 /* YouTube Minimalistic Player & Playlist */
 #videoDrawer{display:none;position:relative;z-index:10;width:100%;margin:0 0 4px;padding:0;box-sizing:border-box}
-.video-minibar{display:flex;align-items:center;gap:6px;padding:3px 8px;font-size:11px;box-sizing:border-box;background:rgba(14,41,36,0.92);border-top:1px solid rgba(127,224,205,0.2)}
-.video-minititle{flex:1;min-width:0;color:#cdeee7;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
-.minibtn{padding:4px 9px;border-radius:8px;font-size:10.5px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(127,224,205,0.3);color:#eef8f6;cursor:pointer;backdrop-filter:blur(8px);transition:all .15s ease;white-space:nowrap}
+.video-minibar{display:flex;align-items:center;gap:5px;padding:3px 6px;font-size:11px;box-sizing:border-box;background:rgba(14,41,36,0.94);border-top:1px solid rgba(127,224,205,0.2);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.video-minibar::-webkit-scrollbar{display:none}
+.video-minititle{flex:1;min-width:60px;color:#cdeee7;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.minibtn{padding:4px 8px;border-radius:7px;font-size:10.5px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(127,224,205,0.3);color:#eef8f6;cursor:pointer;backdrop-filter:blur(8px);transition:all .15s ease;white-space:nowrap;flex-shrink:0}
 .minibtn:hover{background:rgba(255,255,255,0.22);border-color:#52cbbb}
 .minibtn:active{transform:scale(0.95)}
-.minibtn.close{background:rgba(214,138,128,0.2);border-color:rgba(214,138,128,0.4);color:#fa9c9c;padding:4px 8px}
+.minibtn.accent{background:rgba(82,203,187,0.28);border-color:#52cbbb;color:#fae588}
+.minibtn.accent:hover{background:rgba(82,203,187,0.42)}
+.minibtn.close{background:rgba(214,138,128,0.2);border-color:rgba(214,138,128,0.4);color:#fa9c9c;padding:4px 7px}
 .minibtn.close:hover{background:rgba(214,138,128,0.35)}
 .video-viewport{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.55);background:#000;border-bottom:1px solid rgba(127,224,205,0.25)}
 .video-viewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
@@ -271,9 +274,11 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 <div id="videoDrawer" style="display:none">
   <div class="video-minibar">
     <span id="videoTitle" class="video-minititle">No video active</span>
-    <button class="minibtn" id="btnFullscreenVideo" title="Fullscreen video">⛶ Full</button>
+    <button class="minibtn" id="btnAudioSource" title="Toggle audio input: Physical Mic vs Internal Video Audio">🎙 Mic</button>
+    <button class="minibtn accent" id="btnAutoPopulate" title="Auto-detect &amp; populate handpan notes from this video">⚡ Auto-Populate</button>
     <button class="minibtn" id="btnSaveVideoPreset" title="Save current handpan as preset for this video">💾 Save Pan</button>
     <button class="minibtn" id="btnVideoPlaylist" title="Open Playlist">🎵 Songs</button>
+    <button class="minibtn" id="btnFullscreenVideo" title="Fullscreen video">⛶ Full</button>
     <button class="minibtn close" id="btnCloseVideo" title="Close video">✕</button>
   </div>
   <div class="video-viewport">
@@ -356,6 +361,12 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   <label class="ck"><input type="checkbox" id="setEcho"> Hear sound when mic hears a note <span class="pill">speakers can re-trigger</span></label>
   <label class="ck" style="align-items:flex-start;flex-wrap:wrap">Mic sensitivity <input type="range" id="setSens" min="1" max="10" step="1" value="5"></label>
   <div class="hint">Watch the two bars under the waveform while you play a note: <b>vol</b> must fill past its marker, and <b>onset</b> must tick ✓ — on the strike attack or a clear jump in level. Raise sensitivity until both tick ✓ on soft strikes. From sensitivity 4 up, one clear note becomes a pad instantly; 1–3 asks for a second strike to confirm.</div>
+  <div class="row" style="margin-top:12px"><div class="grow"><div class="name">Audio Input Source</div><div class="meta" id="audioSourceMeta">Source for Listen &amp; Learn modes</div></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 6px">
+    <button class="mini" id="btnAudioSrcMic">🎙 Physical Mic</button>
+    <button class="mini" id="btnAudioSrcInternal">🎧 Internal Video Audio</button>
+  </div>
+  <div class="hint"><b>🎙 Physical Mic</b> listens through your phone's microphone to a real handpan in the room.<br><b>🎧 Internal Video Audio</b> streams digital audio directly from the playing YouTube video, bypassing room acoustics and ambient noise.</div>
   <div class="row" style="margin-top:12px"><div class="grow"><div class="name">Room Noise Cancellation</div><div class="meta" id="noiseFloorMeta">Floor: Uncalibrated</div></div>
     <button class="mini primary" id="btnCalibRoomNoise">🎙 Calibrate Noise</button>
   </div>
@@ -682,7 +693,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   var btnListen=$('#btnListen'), btnLearn=$('#btnLearn'), btnRec=$('#btnRec'), btnSongs=$('#btnSongs'), btnSet=$('#btnSet'), btnEdit=$('#btnEdit'), btnHarmony=$('#btnHarmony');
   var btnSaveBoard=$('#btnSaveBoard'), btnClearBoard=$('#btnClearBoard');
 
-  var settings={echo:false, sensitivity:5, ghost:true, haptic:true, harmony:false, layoutStyle:'handpan', instrument:'handpan', zenBg:true, zenSound:false};
+  var settings={echo:false, sensitivity:5, ghost:true, haptic:true, harmony:false, layoutStyle:'handpan', instrument:'handpan', zenBg:true, zenSound:false, audioSource:'mic'};
   try{ var st=localStorage.getItem('handpan.settings.v1'); if(st) settings=Object.assign(settings, JSON.parse(st)); }catch(e){}
   function saveSettings(){ try{ localStorage.setItem('handpan.settings.v1', JSON.stringify(settings)); }catch(e){} }
   function saveLayout(){ try{ localStorage.setItem('handpan.layout.v1', JSON.stringify(state.layout)); }catch(e){} }
@@ -710,7 +721,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     }
   };
 
-  var ctx=null, analyser=null, micStream=null, micSrc=null, timeBuf=null, master=null, verb=null;
+  var ctx=null, analyser=null, micStream=null, micSrc=null, internalAudio=null, internalAudioSrc=null, timeBuf=null, master=null, verb=null;
   var track={t:0, peak:0, frames:[], lastNoteAt:0, guardUntil:0, hbAvg:null, rmsBase:null, cand:null};
   var freqData=null;
   var sustainTrack={
@@ -1740,6 +1751,192 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(typeof updateTeachMicBtn==='function') updateTeachMicBtn();
   }
 
+  function stopInternalAudio(){
+    if(internalAudio){
+      try{ internalAudio.pause(); }catch(e){}
+    }
+    if(internalAudioSrc){
+      try{ internalAudioSrc.disconnect(); }catch(e){}
+    }
+  }
+
+  function startInternalAudio(){
+    ensureCtx();
+    if(!currentVideo || !currentVideo.id){
+      toast('Open a song from 🎵 Songs first to use Internal Audio');
+      return false;
+    }
+
+    if(!internalAudio){
+      internalAudio = new Audio();
+      internalAudio.crossOrigin = 'anonymous';
+      internalAudio.preload = 'auto';
+      internalAudio.onwaiting = function(){ toast('⏳ Buffering video audio stream…'); };
+      internalAudio.onended = function(){
+        toast('Video audio stream ended');
+        if(state.listening) stopListening();
+      };
+      internalAudio.onerror = function(e){
+        console.warn('internal audio error:', e);
+        toast('Audio stream error — check Lotus server');
+      };
+      internalAudioSrc = ctx.createMediaElementSource(internalAudio);
+    }
+
+    var hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 45;
+
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = YIN_BUF;
+    analyser.smoothingTimeConstant = 0;
+
+    try{ internalAudioSrc.disconnect(); }catch(e){}
+    internalAudioSrc.connect(hp);
+    hp.connect(analyser);
+
+    timeBuf = new Float32Array(analyser.fftSize);
+    state.listening = true;
+
+    if(state.listenMode === 'learn'){
+      if(btnLearn) btnLearn.classList.add('on');
+      if(btnListen) btnListen.classList.remove('on');
+    } else {
+      state.listenMode = 'listen';
+      if(btnListen) btnListen.classList.add('on');
+      if(btnLearn) btnLearn.classList.remove('on');
+    }
+
+    track.t = 0; track.frames = []; track.hbAvg = null; track.rmsBase = null; track.cand = null;
+    sustainTrack.midi = null; sustainTrack.count = 0; sustainTrack.emitted = false;
+
+    var targetUrl = '/api/audio?id=' + encodeURIComponent(currentVideo.id);
+    if(internalAudio.src !== location.origin + targetUrl && internalAudio.src !== targetUrl){
+      internalAudio.src = targetUrl;
+    }
+    var p = internalAudio.play();
+    if(p && p.catch) p.catch(function(err){ console.warn('internal play warning:', err); });
+
+    if(zenAudio && settings.zenSound) zenAudio.volume = 0.05;
+    updateStatus();
+    if(typeof updateTeachMicBtn === 'function') updateTeachMicBtn();
+    return true;
+  }
+
+  async function startListening(){
+    ensureCtx();
+    if(settings.audioSource === 'internal'){
+      return startInternalAudio();
+    } else {
+      return await startMic();
+    }
+  }
+
+  function stopListening(){
+    stopInternalAudio();
+    stopMic();
+  }
+
+  function updateAudioSourceUI(){
+    var isInternal = (settings.audioSource === 'internal');
+    var btnBar = $('#btnAudioSource');
+    if(btnBar){
+      btnBar.innerHTML = isInternal ? '🎧 Internal' : '🎙 Mic';
+      btnBar.title = isInternal ? 'Audio Input: Internal Video Stream (tap to switch to Mic)' : 'Audio Input: Physical Mic (tap to switch to Internal)';
+      btnBar.classList.toggle('accent', isInternal);
+    }
+    var btnMic = $('#btnAudioSrcMic');
+    var btnInt = $('#btnAudioSrcInternal');
+    if(btnMic) btnMic.classList.toggle('primary', !isInternal);
+    if(btnInt) btnInt.classList.toggle('primary', isInternal);
+    var meta = $('#audioSourceMeta');
+    if(meta) meta.textContent = isInternal ? 'Internal direct audio stream (Clean & Zero Mic Noise)' : 'Phone physical microphone (Acoustic room sound)';
+  }
+
+  function setAudioSource(src){
+    if(src !== 'internal' && src !== 'mic') src = 'mic';
+    settings.audioSource = src;
+    saveSettings();
+    updateAudioSourceUI();
+    toast(src === 'internal' ? '🎧 Switched to Internal Video Audio' : '🎙 Switched to Physical Mic');
+    if(state.listening){
+      var curMode = state.listenMode;
+      stopListening();
+      state.listenMode = curMode;
+      startListening();
+    }
+  }
+
+  function autoPopulateFromVideo(){
+    if(!currentVideo || !currentVideo.id){
+      toast('Open a song from 🎵 Songs first');
+      return;
+    }
+    var btn = $('#btnAutoPopulate');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = '⏳ Analyzing…';
+    }
+    toast('⚡ Analyzing ' + (currentVideo.title || 'video') + ' audio notes…');
+
+    fetch('/api/auto_populate?id=' + encodeURIComponent(currentVideo.id))
+      .then(function(res){
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = '⚡ Auto-Populate';
+        }
+        if(data && data.status === 'ok' && Array.isArray(data.layout) && data.layout.length > 0){
+          state.removedNotes = [];
+          saveRemovedNotes();
+          if(state.undoStack) state.undoStack = [];
+          updateUndoBtn();
+
+          setLayout(data.layout.slice());
+          saveLayout();
+
+          var presets = loadVideoPresets();
+          var defScale = state.scaleInfo ? state.scaleInfo.scaleName : 'Auto Pan';
+          var sName = defScale + ' (' + data.layout.length + ' pads)';
+          presets[currentVideo.id] = {
+            layout: data.layout.slice(),
+            layoutStyle: settings.layoutStyle || 'handpan',
+            scaleName: sName,
+            noteFreqs: Object.assign({}, state.noteFreqs || {}),
+            artist: currentVideo.artist || '',
+            title: currentVideo.title || '',
+            autoGenerated: true,
+            timestamp: Date.now()
+          };
+          storeVideoPresets(presets);
+
+          // Celebrate with sequential ripple & flash effect
+          data.layout.forEach(function(m, idx){
+            setTimeout(function(){
+              flashPad(m, 'touchfx', 450);
+              triggerWaterRipple(null, null, m);
+            }, idx * 110);
+          });
+
+          toast('✨ Auto-populated ' + data.layout.length + ' pads from video!');
+          renderVideoPlaylist(currentVideoTab);
+        } else {
+          toast('No clear handpan notes detected in video');
+        }
+      })
+      .catch(function(err){
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = '⚡ Auto-Populate';
+        }
+        console.error('auto_populate error:', err);
+        toast('Analysis failed: ' + (err.message || 'Server error'));
+      });
+  }
+
   function pushRec(midi, vel){
     var t=Math.round(performance.now()-state.recStart);
     state.recEvents.push({m:midi, t:t, v:vel});
@@ -2267,9 +2464,9 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     $('#teachTitle').textContent=song.name;
     $('#teachHud').classList.add('show');
     btnSongs.classList.add('on');
-    // Auto-engage microphone in Teach mode so the teacher listens to the physical handpan
+    // Auto-engage listening in Teach mode
     if(!state.listening){
-      startMic();
+      startListening();
     }
     if(typeof updateTeachMicBtn==='function') updateTeachMicBtn();
     renderTeachMarks();
@@ -2336,7 +2533,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   // ---- Playback: replay the recorded song through the synth ----
   function startPlay(song){
     ensureCtx();
-    if(state.listening) stopMic();
+    if(state.listening) stopListening();
     stopPlay();
     if(state.mode==='teach') stopTeach();
     state.mode='play';
@@ -2991,9 +3188,13 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(!drawer || !iframe) return;
 
     drawer.style.display = 'block';
-    iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?autoplay=1&playsinline=1';
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?autoplay=1&playsinline=1&enablejsapi=1';
     if(title) title.textContent = track.title + ' — ' + track.artist;
     applyVideoPreset(track);
+    updateAudioSourceUI();
+    if(settings.audioSource === 'internal' && state.listening){
+      startInternalAudio();
+    }
     setTimeout(resizeRippleCanvases, 60);
   }
 
@@ -3002,6 +3203,11 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     var iframe = $('#videoIframe');
     if(iframe) iframe.src = '';
     if(drawer) drawer.style.display = 'none';
+    if(settings.audioSource === 'internal' && state.listening){
+      stopListening();
+    } else {
+      stopInternalAudio();
+    }
     currentVideo = null;
     toast('Closed video');
     setTimeout(resizeRippleCanvases, 60);
@@ -3068,22 +3274,24 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   btnListen.onclick=function(){
     ensureCtx();
     if(state.listening && state.listenMode==='listen'){
-      stopMic();
+      stopListening();
     } else {
       state.listenMode='listen';
-      startMic();
-      toast('Listen Mode — Displaying notes heard (no sound)');
+      startListening();
+      var srcLabel = settings.audioSource === 'internal' ? ' (Internal Audio)' : '';
+      toast('Listen Mode — Displaying notes heard' + srcLabel + ' (no sound)');
     }
   };
   if(btnLearn){
     btnLearn.onclick=function(){
       ensureCtx();
       if(state.listening && state.listenMode==='learn'){
-        stopMic();
+        stopListening();
       } else {
         state.listenMode='learn';
-        startMic();
-        toast('Learn Mode — Play your handpan to create pads');
+        startListening();
+        var srcLabel = settings.audioSource === 'internal' ? ' from video playback' : ' from physical handpan';
+        toast('Learn Mode — Populating pads' + srcLabel);
       }
     };
   }
@@ -3092,7 +3300,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     else startRec();
   };
   btnSongs.onclick=function(){ renderSongs(); openSheet('#sheetSongs'); };
-  btnSet.onclick=function(){ renderNoteList(); renderSavedBoards(); openSheet('#sheetSet'); };
+  btnSet.onclick=function(){ renderNoteList(); renderSavedBoards(); updateAudioSourceUI(); openSheet('#sheetSet'); };
   btnEdit.onclick=function(){ setEditMode(!state.editNotes); };
   btnHarmony.onclick=function(){
     settings.harmony=!settings.harmony; saveSettings();
@@ -3140,8 +3348,8 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   if(teachMicBtn){
     teachMicBtn.onclick=function(){
       ensureCtx();
-      if(state.listening) stopMic();
-      else startMic();
+      if(state.listening) stopListening();
+      else startListening();
       updateTeachMicBtn();
     };
   }
@@ -3451,6 +3659,56 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       renderVideoPlaylist(this.dataset.vtab);
     };
   }
+
+  // Audio Input Source & Auto-Populate Wiring
+  var btnAudioSrc = $('#btnAudioSource');
+  if(btnAudioSrc){
+    btnAudioSrc.onclick = function(){
+      var nextSrc = (settings.audioSource === 'internal') ? 'mic' : 'internal';
+      setAudioSource(nextSrc);
+    };
+  }
+  var btnAutoPop = $('#btnAutoPopulate');
+  if(btnAutoPop){
+    btnAutoPop.onclick = function(){
+      autoPopulateFromVideo();
+    };
+  }
+  var btnSrcMic = $('#btnAudioSrcMic');
+  if(btnSrcMic){
+    btnSrcMic.onclick = function(){
+      setAudioSource('mic');
+    };
+  }
+  var btnSrcInt = $('#btnAudioSrcInternal');
+  if(btnSrcInt){
+    btnSrcInt.onclick = function(){
+      setAudioSource('internal');
+    };
+  }
+
+  // YouTube IFrame postMessage Bridge for Play/Pause/Seek sync with internal audio
+  window.addEventListener('message', function(ev){
+    try {
+      var data = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+      if(data && data.event === 'infoDelivery' && data.info){
+        if(data.info.playerState !== undefined && settings.audioSource === 'internal' && state.listening && internalAudio){
+          if(data.info.playerState === 1 && internalAudio.paused){
+            internalAudio.play().catch(function(){});
+          } else if(data.info.playerState === 2 && !internalAudio.paused){
+            internalAudio.pause();
+          }
+        }
+        if(data.info.currentTime !== undefined && internalAudio && !internalAudio.paused){
+          if(Math.abs(internalAudio.currentTime - data.info.currentTime) > 1.2){
+            internalAudio.currentTime = data.info.currentTime;
+          }
+        }
+      }
+    } catch(e) {}
+  });
+
+  updateAudioSourceUI();
 
   $('#padWrap').addEventListener('pointerdown', onBackgroundTap);
   window.addEventListener('resize', function(){ renderPads(); resizeRippleCanvases(); });

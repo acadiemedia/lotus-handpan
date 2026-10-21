@@ -3,3 +3,4 @@ samples/
 scores/audio/
 .lotus.log
 .lotus.pid
+__pycache__/
