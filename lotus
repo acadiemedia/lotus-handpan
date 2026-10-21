@@ -20,15 +20,21 @@ PIDFILE="$DIR/.lotus.pid"
 LOGFILE="$DIR/.lotus.log"
 FALLBACK_IP="${LOTUS_FALLBACK_IP:-100.109.199.2}"
 
-# Determine Python binary
+# --- Auto-Bridge from Native Termux Host to PRoot Debian ---
+# Ensures Python environment with numpy, scipy, librosa, and yt-dlp is always used.
+if [ -n "${PREFIX:-}" ] && [ -x "$PREFIX/bin/proot-distro" ] && [ ! -f "/etc/debian_version" ]; then
+    exec "$PREFIX/bin/proot-distro" login debian --bind /storage -- "$TARGET_FILE" "$@"
+fi
+
+# Determine Python binary (Prioritize Debian container's python3)
 if [ -n "${PYTHON:-}" ] && command -v "$PYTHON" >/dev/null 2>&1; then
     PY="$PYTHON"
+elif [ -x "/usr/bin/python3" ]; then
+    PY="/usr/bin/python3"
 elif command -v python3 >/dev/null 2>&1; then
     PY="python3"
 elif [ -x "/data/data/com.termux/files/usr/bin/python3" ]; then
     PY="/data/data/com.termux/files/usr/bin/python3"
-elif [ -x "/usr/bin/python3" ]; then
-    PY="/usr/bin/python3"
 else
     PY="python3"
 fi
