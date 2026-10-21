@@ -96,9 +96,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-
 #pads .tone.willdrop{stroke:#c86a6a;stroke-dasharray:2 1.6}
 #pads.editing .tone{stroke:#c86a6a;stroke-dasharray:2 1.6;cursor:crosshair}
 #pads.editing .tone:hover{stroke:#b34d4d;stroke-width:1.4}
-#editBar{display:none;align-items:center;gap:10px;padding:7px 16px;font-size:12.5px;color:#8a4a44;background:linear-gradient(180deg,rgba(214,138,128,.16),rgba(255,255,255,.35));border-top:1px solid rgba(214,138,128,.32)}
+#editBar{display:none;align-items:center;gap:8px;padding:7px 16px;font-size:12.5px;color:#8a4a44;background:linear-gradient(180deg,rgba(214,138,128,.16),rgba(255,255,255,.35));border-top:1px solid rgba(214,138,128,.32)}
 #editBar.show{display:flex}
-#editBar .mini{margin-left:auto}
+#editBar #btnUndoDelete{margin-left:auto}
 #detStat{font-size:10.5px;color:#9dc2bb;letter-spacing:.04em;height:15px;padding:0 16px;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
 #detStat b{color:#7fe0cd;font-weight:600}
 #detStat .ok{color:var(--good)}
@@ -231,7 +231,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   <div id="noteReadout"></div>
 </div>
 <div id="detStat"></div>
-<div id="editBar">Edit mode — tap a pad to remove it <button class="mini" id="editDone">done</button></div>
+<div id="editBar"><span>Edit mode — tap a pad to remove</span> <button class="mini" id="btnUndoDelete" title="Undo deleted note" disabled style="opacity:0.4;cursor:not-allowed">↶ Undo</button> <button class="mini" id="editDone">done</button></div>
 
 <div id="padWrap">
   <div id="pads">
@@ -827,7 +827,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   var state={
     listening:false, listenMode:'listen', recording:false, recStart:0, recEvents:[],
     layout:[], noteFreqs:{}, scaleInfo:null, offsetCents:0, layoutStyle:'handpan', editNotes:false,
-    removedNotes:loadSavedRemovedNotes(),
+    removedNotes:loadSavedRemovedNotes(), undoStack:[],
     mode:'free', song:null, teachStart:0, teachIdx:0, hits:0, misses:0, streak:0, best:0,
     speed:1, loop:false, songDur:0, prevLayout:null, playTimers:[], playStart:0,
     ambientNoise:{
@@ -1223,6 +1223,9 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 
   function removeNote(midi){
     if(state.layout.indexOf(midi)<0) return;
+    var prevFreq=state.noteFreqs[midi]||HP.noteToFreq(midi);
+    if(!state.undoStack) state.undoStack=[];
+    state.undoStack.push({midi:midi, freq:prevFreq});
     delete state.noteFreqs[midi];
     var next=state.layout.filter(function(m){ return m!==midi; });
     if(!state.removedNotes) state.removedNotes=[];
@@ -1232,7 +1235,51 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     }
     setLayout(next, {silent:true});
     saveLayout();
+    renderNoteList();
+    updateUndoBtn();
     toast('removed '+HP.noteName(midi));
+  }
+
+  function undoRemoveNote(){
+    if(!state.undoStack || !state.undoStack.length){
+      toast('Nothing to undo');
+      return;
+    }
+    var step=state.undoStack.pop();
+    var midi=step.midi;
+    if(state.removedNotes){
+      state.removedNotes=state.removedNotes.filter(function(m){ return m!==midi; });
+      saveRemovedNotes();
+    }
+    state.noteFreqs[midi]=step.freq;
+    var next=state.layout.concat([midi]).sort(function(a,b){ return a-b; });
+    setLayout(next, {silent:true});
+    saveLayout();
+    renderNoteList();
+    updateUndoBtn();
+    var el=padEl(midi);
+    if(el){
+      el.classList.add('newpad');
+      flashPad(midi,'touchfx',450);
+    }
+    toast('Restored '+HP.noteName(midi));
+  }
+
+  function updateUndoBtn(){
+    var btn=$('#btnUndoDelete');
+    if(!btn) return;
+    var count=(state.undoStack && state.undoStack.length)||0;
+    if(count>0){
+      btn.disabled=false;
+      btn.style.opacity='1';
+      btn.style.cursor='pointer';
+      btn.textContent='↶ Undo'+(count>1?' ('+count+')':'');
+    }else{
+      btn.disabled=true;
+      btn.style.opacity='0.4';
+      btn.style.cursor='not-allowed';
+      btn.textContent='↶ Undo';
+    }
   }
 
   function renderNoteList(){
@@ -1262,7 +1309,10 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     btnEdit.classList.toggle('on', state.editNotes);
     padsEl.classList.toggle('editing', state.editNotes);
     $('#editBar').classList.toggle('show', state.editNotes);
-    if(state.editNotes) toast('Edit mode — tap pads to remove');
+    if(state.editNotes){
+      updateUndoBtn();
+      toast('Edit mode — tap pads to remove');
+    }
   }
 
   var PASTELS=[
@@ -2500,7 +2550,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
         }
       }
     } else {
-      var highStrike = hbHit && (rms > thr * 0.45);
+      var highStrike = hbHit && (rms > thr * 0.32);
       var strike = ((rms>thr && (hbHit || rise)) || highStrike) && now>=track.guardUntil;
       if(strike){ track.t=now; track.peak=rms; track.frames=[]; }
     }
@@ -2522,8 +2572,16 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(!spec) return freq;
     var binHz=(ctx.sampleRate/2)/spec.length;
 
+    function magAt(f){
+      var idx=f/binHz;
+      if(!(idx>=0) || idx>=spec.length-1) return -200;
+      var lo=Math.floor(idx), w=idx-lo;
+      return spec[lo]*(1-w)+spec[lo+1]*w;
+    }
+
     // 1. Decisive Harmonic Product Spectrum (HPS) with Piano Calibration support
-    var hpsOpts = {minFreq:50, maxFreq:850, numHarmonics:4};
+    var maxSearchFreq = Math.max(1800, freq * 1.5);
+    var hpsOpts = {minFreq:50, maxFreq:maxSearchFreq, numHarmonics:4};
     if(state.ambientNoise && state.ambientNoise.active && state.ambientNoise.spec){
       hpsOpts.ambientSpec = state.ambientNoise.spec;
     }
@@ -2538,14 +2596,21 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     var hps=HP.harmonicProductSpectrum(spec, binHz, hpsOpts);
     if(hps && hps.freq>50 && hps.score>0){
       var r=freq/hps.freq;
-      if(r>=1.82 && r<=2.18){
-        return freq/2; // Fold down octave overtone
-      }
-      if(r>=2.82 && r<=3.18){
-        return freq/3; // Fold down 3rd harmonic (compound 5th)
-      }
-      if(r>=3.82 && r<=4.18){
-        return freq/4; // Fold down 4th harmonic
+
+      var mCur = Math.max(magAt(freq*0.98), magAt(freq), magAt(freq*1.02));
+      var mSub = Math.max(magAt(hps.freq*0.98), magAt(hps.freq), magAt(hps.freq*1.02));
+      var subValid = (freq < 450) || (mSub >= mCur - 5.5);
+
+      if(subValid){
+        if(r>=1.82 && r<=2.18){
+          return freq/2; // Fold down octave overtone
+        }
+        if(r>=2.82 && r<=3.18){
+          return freq/3; // Fold down 3rd harmonic (compound 5th)
+        }
+        if(r>=3.82 && r<=4.18){
+          return freq/4; // Fold down 4th harmonic
+        }
       }
       if(r>=0.46 && r<=0.54){
         return freq*2; // Subharmonic tracking error correction
@@ -2553,12 +2618,6 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     }
 
     // 2. Subharmonic spectral verification fallback
-    function magAt(f){
-      var idx=f/binHz;
-      if(!(idx>=0) || idx>=spec.length-1) return -200;
-      var lo=Math.floor(idx), w=idx-lo;
-      return spec[lo]*(1-w)+spec[lo+1]*w;
-    }
     return HP.octaveCorrect(freq, magAt);
   }
 
@@ -2608,8 +2667,10 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
         // Known pad: score >= 0.32, duration >= 90ms
         // Brand NEW pad: score >= 0.50, duration >= 110ms, at least 2 frames
         var isKnown = state.layout.indexOf(sustainTrack.midi)>=0;
+        var minDur = (sustainTrack.freq >= 500) ? 65 : 110;
+        var minClr = (sustainTrack.freq >= 500) ? 0.40 : 0.50;
         var passesPurity = isKnown ? (sustainTrack.clarity>=0.32 && (sustainTrack.count>=2 || dur>=80))
-                                   : (sustainTrack.clarity>=0.50 && dur>=110 && sustainTrack.count>=2);
+                                   : (sustainTrack.clarity>=minClr && dur>=minDur && sustainTrack.count>=2);
 
         if(!sustainTrack.emitted && passesPurity){
           sustainTrack.emitted=true;
@@ -2654,11 +2715,13 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     var freqs=[], scores=[];
     for(var i=0;i<frames.length;i++){
       var r=HP.fftNoteDetect(frames[i], binHz, {});
-      if(r && r.score>=0.35 && r.freq>55){ freqs.push(r.freq); scores.push(r.score); }
+      var minSc = (r && r.freq>=500) ? 0.28 : 0.35;
+      if(r && r.score>=minSc && r.freq>55){ freqs.push(r.freq); scores.push(r.score); }
     }
     if(freqs.length<Math.min(P.minValid, 2)) return null;
     var med=HP.medianFreq(freqs);
-    if(!(med.freq>0) || med.spreadCents>(P.spread*1.1)) return null;
+    var maxSpread = (med.freq >= 500) ? (P.spread * 1.35) : (P.spread * 1.1);
+    if(!(med.freq>0) || med.spreadCents > maxSpread) return null;
     var midFrame = frames[frames.length>>1];
     var fCorr = octaveCorrectApp(med.freq, midFrame);
     var sc=scores.slice().sort(function(a,b){return a-b});
@@ -2735,13 +2798,15 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
           noteReadout.innerHTML='<b>'+HP.noteName(midi)+'</b> <span style="opacity:.55">shielded</span>';
         }else{
           // 4. Balanced Purity Gate for NEW pads
-          if(state.layout.indexOf(midi)<0 && (f.score||f.clarity)<0.50){
+          var isHighNote = (f.freq >= 500) || (midi >= 71);
+          var minLearnScore = isHighNote ? 0.38 : 0.50;
+          if(state.layout.indexOf(midi)<0 && (f.score||f.clarity) < minLearnScore){
             return;
           }
 
           var P=detParams();
           var cand=track.cand;
-          var isClear = (f.score||f.clarity) >= 0.52;
+          var isClear = isHighNote ? ((f.score||f.clarity) >= 0.42) : ((f.score||f.clarity) >= 0.52);
           var needConfirm = isClear ? 1 : (isSustained ? 1 : P.confirm);
           if(cand && (cand.midi===midi || Math.abs(cand.midi-midi)<=1) && now-cand.t<3000) cand.n++;
           else track.cand={midi:midi, t:now, n:1};
@@ -3175,6 +3240,8 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(!state.layout.length){ toast('Board is already clear'); return; }
     state.removedNotes=[];
     saveRemovedNotes();
+    state.undoStack=[];
+    updateUndoBtn();
     setLayout([]);
     saveLayout();
     toast('Board reset — ready for new notes');
@@ -3192,11 +3259,15 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     saveCustomBoard(name);
     closeSheets();
   };
+  var btnUndo=$('#btnUndoDelete');
+  if(btnUndo) btnUndo.onclick=function(){ undoRemoveNote(); };
   $('#editDone').onclick=function(){ setEditMode(false); };
   $('#btnClearNotes').onclick=function(){
     if(!state.layout.length){ toast('nothing to clear'); return; }
     state.removedNotes=[];
     saveRemovedNotes();
+    state.undoStack=[];
+    updateUndoBtn();
     setLayout([]);
     saveLayout();
     toast('cleared — keep playing to re-learn');
