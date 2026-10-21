@@ -179,15 +179,15 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 .chip.ding{background:linear-gradient(180deg,#eafbf6,#cdeee7);border-color:#9fd8cc}
 
 /* YouTube Minimalistic Player & Playlist */
-#videoDrawer{display:none;position:relative;z-index:10;width:100%;max-width:440px;margin:2px auto 6px;padding:0 8px;box-sizing:border-box}
-.video-minibar{display:flex;align-items:center;gap:6px;padding:2px 4px 5px;font-size:11px}
-.video-minititle{flex:1;min-width:0;color:#cdeee7;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
-.minibtn{padding:4px 9px;border-radius:10px;font-size:10.5px;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(127,224,205,0.3);color:#eef8f6;cursor:pointer;backdrop-filter:blur(8px);transition:all .15s ease;white-space:nowrap}
-.minibtn:hover{background:rgba(255,255,255,0.22);border-color:#52cbbb}
+#videoDrawer{display:none;position:relative;z-index:10;width:100%;margin:0 0 6px;padding:0;box-sizing:border-box}
+.video-minibar{display:flex;align-items:center;gap:8px;padding:4px 12px 6px;font-size:11.5px;box-sizing:border-box}
+.video-minititle{flex:1;min-width:0;color:#cdeee7;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.minibtn{padding:5px 11px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.14);border:1px solid rgba(127,224,205,0.35);color:#eef8f6;cursor:pointer;backdrop-filter:blur(8px);transition:all .15s ease;white-space:nowrap}
+.minibtn:hover{background:rgba(255,255,255,0.25);border-color:#52cbbb}
 .minibtn:active{transform:scale(0.95)}
-.minibtn.close{background:rgba(214,138,128,0.2);border-color:rgba(214,138,128,0.4);color:#fa9c9c;padding:4px 8px}
+.minibtn.close{background:rgba(214,138,128,0.22);border-color:rgba(214,138,128,0.45);color:#fa9c9c;padding:5px 9px}
 .minibtn.close:hover{background:rgba(214,138,128,0.35)}
-.video-viewport{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,0.65), 0 0 0 1px rgba(127,224,205,0.3);background:#000}
+.video-viewport{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,0.65);background:#000;border-top:1px solid rgba(127,224,205,0.25);border-bottom:1px solid rgba(127,224,205,0.25)}
 .video-viewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 .video-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;border-bottom:1px solid var(--line2)}
 .tab-btn{padding:8px 12px;border-radius:12px;font-size:11px;font-weight:600;color:var(--dim);background:var(--panel);border:1px solid var(--line);white-space:nowrap;cursor:pointer;transition:all .15s ease}
@@ -2985,6 +2985,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?autoplay=1&playsinline=1';
     if(title) title.textContent = track.title + ' — ' + track.artist;
     applyVideoPreset(track);
+    setTimeout(resizeRippleCanvases, 60);
   }
 
   function closeVideo(){
@@ -2994,6 +2995,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     if(drawer) drawer.style.display = 'none';
     currentVideo = null;
     toast('Closed video');
+    setTimeout(resizeRippleCanvases, 60);
   }
 
   function renderVideoPlaylist(tab){
