@@ -109,7 +109,17 @@ class H(http.server.SimpleHTTPRequestHandler):
                 self.send_error(400, "Invalid video ID")
                 return
             try:
-                score_json = os.path.join(SCORES_DIR, f"{vid}.json")
+                start_sec = int(query.get("start", [0])[0])
+            except (ValueError, TypeError):
+                start_sec = 0
+            try:
+                duration = int(query.get("dur", [90])[0])
+            except (ValueError, TypeError):
+                duration = 90
+
+            try:
+                cache_key = f"{vid}_{start_sec}_{duration}" if start_sec > 0 else vid
+                score_json = os.path.join(SCORES_DIR, f"{cache_key}.json")
                 if os.path.exists(score_json):
                     with open(score_json, "r", encoding="utf-8") as f:
                         score_data = json.load(f)
@@ -117,10 +127,12 @@ class H(http.server.SimpleHTTPRequestHandler):
                     notes = score_data.get("notes", [])
                 else:
                     tb = get_transcriber()
-                    _, wav_path = tb.extract_audio(vid)
+                    _, wav_path = tb.extract_audio(vid, start_sec=start_sec, duration=duration)
                     notes, layout = tb.transcribe_audio(wav_path)
                     score_data = {
                         "videoId": vid,
+                        "startSec": start_sec,
+                        "duration": duration,
                         "layout": layout,
                         "notes": notes,
                         "totalNotes": len(notes),
@@ -132,6 +144,8 @@ class H(http.server.SimpleHTTPRequestHandler):
                 resp = json.dumps({
                     "status": "ok",
                     "videoId": vid,
+                    "startSec": start_sec,
+                    "duration": duration,
                     "layout": layout,
                     "totalNotes": len(notes)
                 }).encode("utf-8")

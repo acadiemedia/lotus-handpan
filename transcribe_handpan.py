@@ -7,10 +7,18 @@ synchronized time-stamped note scores for live play-along.
 
 import sys, os, json, subprocess
 import numpy as np
+import scipy.io.wavfile as wavfile
 import librosa
 
-def extract_audio(video_id_or_url, max_duration=180):
-    """Downloads audio stream via yt-dlp and converts to mono 22050Hz WAV."""
+def format_time(sec):
+    sec = max(0, int(sec))
+    h = sec // 3600
+    m = (sec % 3600) // 60
+    s = sec % 60
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+def extract_audio(video_id_or_url, start_sec=0, duration=90):
+    """Downloads a targeted audio window via yt-dlp and converts to mono 22050Hz WAV."""
     if video_id_or_url.startswith("http"):
         url = video_id_or_url
         vid = video_id_or_url.split("v=")[-1].split("&")[0].split("/")[-1]
@@ -20,16 +28,23 @@ def extract_audio(video_id_or_url, max_duration=180):
 
     out_dir = "/data/data/com.termux/files/home/handpan/scores/audio"
     os.makedirs(out_dir, exist_ok=True)
-    wav_path = os.path.join(out_dir, f"{vid}.wav")
+
+    start_sec = max(0, int(start_sec))
+    duration = max(30, int(duration))
+    end_sec = start_sec + duration
+
+    wav_filename = f"{vid}_{start_sec}_{duration}.wav" if start_sec > 0 else f"{vid}.wav"
+    wav_path = os.path.join(out_dir, wav_filename)
 
     if os.path.exists(wav_path):
         return vid, wav_path
 
-    raw_path = os.path.join(out_dir, f"raw_{vid}.wav")
-    print(f"[*] Downloading audio for {vid} (up to {max_duration}s)...")
+    raw_path = os.path.join(out_dir, f"raw_{vid}_{start_sec}_{duration}.wav")
+    sec_str = f"*{format_time(start_sec)}-{format_time(end_sec)}"
+    print(f"[*] Downloading audio slice for {vid} ({sec_str})...")
     cmd = [
         "yt-dlp", "-f", "ba",
-        "--download-sections", f"*00:00:00-00:{max_duration//60:02d}:{max_duration%60:02d}",
+        "--download-sections", sec_str,
         "-x", "--audio-format", "wav",
         "-o", raw_path,
         url
@@ -40,16 +55,27 @@ def extract_audio(video_id_or_url, max_duration=180):
     subprocess.run(["ffmpeg", "-y", "-i", raw_path, "-ac", "1", "-ar", "22050", wav_path],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     if os.path.exists(raw_path):
-        os.remove(raw_path)
+        try: os.remove(raw_path)
+        except Exception: pass
 
     return vid, wav_path
 
 def transcribe_audio(wav_path, min_clarity=0.45):
-    """Detects strike onsets and extracts fundamental pitch frequencies."""
-    print(f"[*] Loading {wav_path}...")
-    y, sr = librosa.load(wav_path, sr=22050)
+    """Detects strike onsets and extracts fundamental pitch frequencies via fast wav loading."""
+    print(f"[*] Loading {wav_path} via fast wavfile...")
+    sr, data = wavfile.read(wav_path)
+    if data.dtype == np.int16:
+        y = (data / 32768.0).astype(np.float32)
+    elif data.dtype == np.int32:
+        y = (data / 2147483648.0).astype(np.float32)
+    else:
+        y = data.astype(np.float32)
+
+    if len(y.shape) > 1:
+        y = np.mean(y, axis=1)
+
     dur = len(y) / sr
-    print(f"[*] Loaded {dur:.1f}s of audio. Detecting transients...")
+    print(f"[*] Loaded {dur:.1f}s of audio in ms. Detecting transients...")
 
     # Onset detection optimized for percussive handpan strikes
     onset_env = librosa.onset.onset_strength(y=y, sr=sr, aggregate=np.median)

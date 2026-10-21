@@ -4,3 +4,4 @@ scores/audio/
 .lotus.log
 .lotus.pid
 __pycache__/
+scores/*.json

@@ -1877,9 +1877,17 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       btn.disabled = true;
       btn.textContent = '⏳ Analyzing…';
     }
-    toast('⚡ Analyzing ' + (currentVideo.title || 'video') + ' audio notes…');
 
-    fetch('/api/auto_populate?id=' + encodeURIComponent(currentVideo.id))
+    // For long 2-hour videos, analyze a targeted 90s sample window
+    var startOffset = Math.max(0, Math.floor(currentVideoTime || 0));
+    if(startOffset < 15) startOffset = 0;
+    var timeDesc = startOffset > 0 ? (' at ' + Math.floor(startOffset/60) + 'm' + (startOffset%60) + 's') : '';
+    toast('⚡ Fast 90s note analysis' + timeDesc + '…');
+
+    var apiUrl = '/api/auto_populate?id=' + encodeURIComponent(currentVideo.id) +
+                 '&start=' + startOffset + '&dur=90';
+
+    fetch(apiUrl)
       .then(function(res){
         if(!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -1895,14 +1903,16 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
           if(state.undoStack) state.undoStack = [];
           updateUndoBtn();
 
-          setLayout(data.layout.slice());
+          // Merge newly detected notes with existing notes so notes aren't lost across segments
+          var combined = [...new Set([...(state.layout || []), ...data.layout])].sort(function(a,b){return a-b});
+          setLayout(combined);
           saveLayout();
 
           var presets = loadVideoPresets();
           var defScale = state.scaleInfo ? state.scaleInfo.scaleName : 'Auto Pan';
-          var sName = defScale + ' (' + data.layout.length + ' pads)';
+          var sName = defScale + ' (' + combined.length + ' pads)';
           presets[currentVideo.id] = {
-            layout: data.layout.slice(),
+            layout: combined.slice(),
             layoutStyle: settings.layoutStyle || 'handpan',
             scaleName: sName,
             noteFreqs: Object.assign({}, state.noteFreqs || {}),
@@ -1921,10 +1931,10 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
             }, idx * 110);
           });
 
-          toast('✨ Auto-populated ' + data.layout.length + ' pads from video!');
+          toast('✨ Auto-populated ' + data.layout.length + ' pads' + (combined.length > data.layout.length ? (' (' + combined.length + ' total)') : '') + '!');
           renderVideoPlaylist(currentVideoTab);
         } else {
-          toast('No clear handpan notes detected in video');
+          toast('No clear handpan notes detected in this 90s window');
         }
       })
       .catch(function(err){
@@ -3123,6 +3133,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   }
 
   var currentVideo = null;
+  var currentVideoTime = 0;
   var currentVideoTab = 'changeofcolours';
 
   function applyVideoPreset(trackOrId){
@@ -3209,6 +3220,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
       stopInternalAudio();
     }
     currentVideo = null;
+    currentVideoTime = 0;
     toast('Closed video');
     setTimeout(resizeRippleCanvases, 60);
   }
@@ -3692,6 +3704,9 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     try {
       var data = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
       if(data && data.event === 'infoDelivery' && data.info){
+        if(data.info.currentTime !== undefined){
+          currentVideoTime = data.info.currentTime;
+        }
         if(data.info.playerState !== undefined && settings.audioSource === 'internal' && state.listening && internalAudio){
           if(data.info.playerState === 1 && internalAudio.paused){
             internalAudio.play().catch(function(){});
