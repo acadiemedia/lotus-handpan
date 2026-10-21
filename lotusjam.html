@@ -188,6 +188,33 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 .chip .x{width:19px;height:19px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;color:#b06a60;background:#fbeceb;border:1px solid #e7cdc9;cursor:pointer}
 .chip.ding{background:linear-gradient(180deg,#eafbf6,#cdeee7);border-color:#9fd8cc}
 
+/* YouTube Jam Along Drawer & Playlist */
+#videoDrawer{position:relative;z-index:10;width:100%;max-width:800px;margin:0 auto 4px;background:linear-gradient(180deg,rgba(16,48,42,0.95),rgba(10,32,28,0.98));border-top:1px solid rgba(127,224,205,0.25);border-bottom:1px solid rgba(127,224,205,0.25);backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.45);transition:all .25s ease}
+.video-drawer-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 14px;font-size:11.5px;flex-wrap:wrap;background:rgba(255,255,255,0.03)}
+.video-info{display:flex;align-items:center;gap:7px;min-width:0;flex:1}
+.video-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:rgba(214,138,128,0.22);border:1px solid rgba(214,138,128,0.45);color:#fa9c9c;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.video-title{color:#eef8f6;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.video-preset-badge{font-size:10px;background:rgba(63,188,171,0.18);border:1px solid rgba(63,188,171,0.4);color:#7fe0cd;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.video-preset-badge.custom{color:#fad382;background:rgba(217,169,79,0.2);border-color:rgba(217,169,79,0.45)}
+.video-bar-actions{display:flex;align-items:center;gap:5px;margin-left:auto}
+.video-bar-actions .mini{padding:5px 9px;font-size:11px}
+.video-frame-wrap{position:relative;width:100%;aspect-ratio:16/9;max-height:210px;background:#000;overflow:hidden;transition:max-height .25s ease}
+.video-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#videoDrawer.mini-mode .video-frame-wrap{max-height:0;aspect-ratio:unset}
+.video-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;border-bottom:1px solid var(--line2)}
+.tab-btn{padding:8px 12px;border-radius:12px;font-size:11px;font-weight:600;color:var(--dim);background:var(--panel);border:1px solid var(--line);white-space:nowrap;cursor:pointer;transition:all .15s ease}
+.tab-btn.active{background:linear-gradient(180deg,#fbfffe,#e6f6f2);color:#2c6f66;border-color:var(--copper2);box-shadow:0 0 0 1px var(--copper2) inset}
+.video-list{display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:10px}
+.video-card{display:flex;gap:10px;padding:8px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow-card);cursor:pointer;transition:all .15s ease}
+.video-card:hover{transform:translateY(-2px);border-color:var(--copper2);box-shadow:0 8px 20px rgba(63,188,171,.2)}
+.video-card.active{border-color:var(--copper2);background:linear-gradient(180deg,#fbfffe,#eef9f7);box-shadow:0 0 0 1px var(--copper2) inset}
+.video-thumb{width:84px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#0e2924}
+.video-card-info{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;flex:1}
+.video-card-title{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-card-artist{font-size:10.5px;color:var(--dim)}
+.video-card-scale{display:inline-block;font-size:9.5px;font-weight:700;color:#1f9e8f;background:rgba(63,188,171,.14);border:1px solid rgba(63,188,171,.3);padding:1px 6px;border-radius:4px;width:fit-content;margin-top:2px}
+.video-card-scale.custom{color:#e59835;background:rgba(217,169,79,.14);border-color:rgba(217,169,79,.4)}
+
 /* Zen Waterfall & Birds Glass Window */
 #zenBg{
   position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
@@ -229,6 +256,7 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     <button id="btnSaveBoard" class="topbtn" title="Save current board layout"><span class="ic">💾</span>Save</button>
     <button id="btnClearBoard" class="topbtn danger" title="Reset board / clear all pads"><span class="ic">⟲</span>Clear</button>
     <button id="btnHarmony" class="topbtn" title="Auto-harmonize what you play"><span class="ic">♫</span>Harmony</button>
+    <button id="btnJamVideo" class="topbtn" title="YouTube Jam Along &amp; Presets"><span class="ic">▶</span>Jam Video</button>
   </div>
   <div id="topRight">
     <div id="status"><span class="scale" id="scaleName">no pan yet</span><br><span id="scaleMeta">press Listen &amp; play</span></div>
@@ -242,6 +270,25 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
 </div>
 <div id="detStat"></div>
 <div id="editBar"><span>Edit mode — tap a pad to remove</span> <button class="mini" id="btnUndoDelete" title="Undo deleted note" disabled style="opacity:0.4;cursor:not-allowed">↶ Undo</button> <button class="mini" id="editDone">done</button></div>
+
+<div id="videoDrawer" style="display:none">
+  <div class="video-drawer-bar">
+    <div class="video-info">
+      <span class="video-tag">▶ Jam Along</span>
+      <span id="videoTitle" class="video-title">No video active</span>
+      <span id="videoPresetBadge" class="video-preset-badge">Scale: Default</span>
+    </div>
+    <div class="video-bar-actions">
+      <button class="mini" id="btnVideoPlaylist" title="Open Playlist">🎵 Playlist</button>
+      <button class="mini primary" id="btnSaveVideoPreset" title="Save current handpan tuning as preset for this video">💾 Save Preset</button>
+      <button class="mini" id="btnToggleVideoSize" title="Toggle mini/full size">🗕 Mini</button>
+      <button class="mini danger" id="btnCloseVideo" title="Close video">✕</button>
+    </div>
+  </div>
+  <div id="videoFrameWrap" class="video-frame-wrap">
+    <iframe id="videoIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  </div>
+</div>
 
 <div id="padWrap">
   <div id="pads">
@@ -294,6 +341,26 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
   <div id="songList"></div>
   <div class="hint"><b>Play</b> replays a take through the synth · <b>Teach</b> lights each pad on the beat and scores your taps. Your mic <b>Recordings</b> appear here — record a groove, then Teach it back to yourself.</div>
   <button class="btn ghost" data-close>close</button>
+</div></div>
+
+<div class="sheet" id="sheetVideoPlaylist"><div class="card" style="max-height:86vh;display:flex;flex-direction:column">
+  <h2>YouTube Jam Along</h2>
+  <div class="video-tabs">
+    <button class="tab-btn active" data-vtab="changeofcolours">Change of Colours (10)</button>
+    <button class="tab-btn" data-vtab="maltemarten">Malte Marten (10)</button>
+    <button class="tab-btn" data-vtab="collabs">Collabs (4)</button>
+    <button class="tab-btn" data-vtab="custom">➕ Custom URL</button>
+  </div>
+  <div id="videoList" class="video-list" style="overflow-y:auto;flex:1;margin:12px 0 6px"></div>
+  <div id="customVideoForm" style="display:none;padding:12px 0">
+    <input type="text" id="customVideoUrl" placeholder="Paste YouTube link (e.g. https://youtu.be/...)">
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input type="text" id="customVideoTitle" placeholder="Song title (optional)">
+      <button class="btn" id="btnLoadCustomVideo" style="margin-top:0;width:auto;white-space:nowrap;padding:12px 18px">Load &amp; Play</button>
+    </div>
+    <div class="hint" style="margin-top:10px">Paste any video from YouTube. Lotus Jam will embed it above your pads and allow you to save your custom handpan preset for it.</div>
+  </div>
+  <button class="btn ghost" data-close style="margin-top:4px">close</button>
 </div></div>
 
 <div class="sheet" id="sheetSet"><div class="card">
@@ -3211,6 +3278,218 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     requestAnimationFrame(loop);
   }
 
+  /* ========================================================
+   * YouTube Jam Along & Per-Video Handpan Presets
+   * ======================================================== */
+  var VIDEO_PLAYLISTS = {
+    changeofcolours: [
+      {id:"VOrhji0urv4", title:"Return to Your Heart", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
+      {id:"65oC9obpxc0", title:"Where Time Stands Still", artist:"Change of Colours", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
+      {id:"EFS6w8LpDUg", title:"Everything Changes", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
+      {id:"yXpAx3eazL4", title:"Becoming Whole", artist:"Change of Colours", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
+      {id:"TuIDBUlrzfM", title:"Between Earth and Sky", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
+      {id:"HStOxNcj2s4", title:"Memory of Now", artist:"Change of Colours", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
+      {id:"hBAiRtia3Og", title:"a fleeting moment in time", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]},
+      {id:"2sDH4WS0Guk", title:"Trust the Unfolding", artist:"Change of Colours", scale:"E Amara", midi:[52,59,62,64,66,67,69,71,74]},
+      {id:"CGc5X55amM4", title:"Calm Your Mind", artist:"Change of Colours", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
+      {id:"OKq9e0-LN3Y", title:"Quiet Warmth", artist:"Change of Colours", scale:"D Celtic Minor", midi:[50,57,60,62,64,65,67,69,72]}
+    ],
+    maltemarten: [
+      {id:"Qf8ETxbQ8kQ", title:"Cortisol Reset (777 Hz)", artist:"Malte Marten", scale:"C Aegean", midi:[48,55,58,60,62,63,67,70,72]},
+      {id:"Ttaf1IYt6F4", title:"Nervous System Healing (777 Hz)", artist:"Malte Marten", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
+      {id:"71ZFILhE7ZY", title:"Find Inner Calm (1111 Hz)", artist:"Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
+      {id:"C2lortJpYjY", title:"Peace of Mind (999 Hz)", artist:"Malte Marten", scale:"C Aegean", midi:[48,55,58,60,62,63,67,70,72]},
+      {id:"o9CfuVwht5I", title:"Calm Nervous System (1111 Hz)", artist:"Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
+      {id:"qBKDPZ0btws", title:"When Love Speaks (1111 Hz)", artist:"Malte Marten", scale:"D Ashakiran", midi:[50,55,57,58,61,62,64,65,69]},
+      {id:"UPTrO039F5o", title:"Gratitude Prayer (1111 Hz)", artist:"Malte Marten", scale:"F# Nordlys", midi:[54,59,61,62,66,68,69,73,76]},
+      {id:"BULWmiX5nx8", title:"Trust Your Healing (1111 Hz)", artist:"Malte Marten", scale:"F# Kurd", midi:[54,61,62,64,66,68,69,71,73]},
+      {id:"B3WUW2jlpeE", title:"Medicine for the Heart (1111 Hz)", artist:"Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]},
+      {id:"PnBW_JiqJ2c", title:"Deep Stress Relief (1111 Hz)", artist:"Malte Marten", scale:"F# Low Pygmy", midi:[54,56,57,61,64,66,68,69,73]}
+    ],
+    collabs: [
+      {id:"4EwDBvI8BFw", title:"Emerald", artist:"Change of Colours × Malte Marten", scale:"E Amara", midi:[52,59,62,64,66,67,69,71,74]},
+      {id:"7S1cOhM7OmA", title:"Rising", artist:"Change of Colours × Malte Marten", scale:"C Aegean", midi:[48,55,58,60,62,63,67,70,72]},
+      {id:"hjIsCkUA8G8", title:"Change Of Colours (#97)", artist:"Change of Colours × Malte Marten", scale:"D Kurd", midi:[50,57,58,60,62,64,65,67,69]},
+      {id:"mlaGLiI7Gvg", title:"Reunion", artist:"Change of Colours (Julia) × Malte Marten", scale:"D Aegean", midi:[50,57,60,62,64,65,69,72,74]}
+    ]
+  };
+
+  function loadVideoPresets(){
+    try{
+      var s=localStorage.getItem('handpan.videoPresets.v1');
+      if(s){ var p=JSON.parse(s); if(p && typeof p==='object') return p; }
+    }catch(e){}
+    return {};
+  }
+  function storeVideoPresets(p){
+    try{ localStorage.setItem('handpan.videoPresets.v1', JSON.stringify(p)); }catch(e){}
+  }
+  function findTrackById(id){
+    for(var k in VIDEO_PLAYLISTS){
+      var t=VIDEO_PLAYLISTS[k].find(function(x){ return x.id===id; });
+      if(t) return t;
+    }
+    return null;
+  }
+
+  var currentVideo = null;
+  var currentVideoTab = 'changeofcolours';
+
+  function applyVideoPreset(trackOrId){
+    var id = typeof trackOrId==='string' ? trackOrId : trackOrId.id;
+    var track = typeof trackOrId==='object' ? trackOrId : findTrackById(id);
+    var presets = loadVideoPresets();
+    var custom = presets[id];
+    var layout = custom ? custom.layout : (track ? track.midi : null);
+    var scaleName = custom ? custom.scaleName : (track ? track.scale : 'Handpan');
+    if(!layout || !layout.length) return;
+
+    state.removedNotes=[];
+    saveRemovedNotes();
+    if(state.undoStack) state.undoStack=[];
+    updateUndoBtn();
+    state.noteFreqs={};
+    if(custom && custom.noteFreqs){
+      state.noteFreqs = Object.assign({}, custom.noteFreqs);
+    } else {
+      for(var i=0;i<layout.length;i++){
+        state.noteFreqs[layout[i]] = HP.noteToFreq(layout[i]);
+      }
+    }
+    setLayout(layout.slice(), {silent:true});
+    saveLayout();
+    renderNoteList();
+
+    setTimeout(function(){
+      for(var j=0;j<layout.length;j++){
+        flashPad(layout[j], 'touchfx', 450);
+      }
+    }, 50);
+
+    var badge=$('#videoPresetBadge');
+    if(badge){
+      badge.textContent = 'Scale: ' + scaleName + (custom ? ' ⭐' : '');
+      badge.classList.toggle('custom', !!custom);
+    }
+    toast('Loaded ' + scaleName + (custom ? ' (saved preset)' : ''));
+  }
+
+  function saveCurrentAsVideoPreset(){
+    if(!currentVideo){ toast('No video active to save preset for'); return; }
+    if(!state.layout.length){ toast('No pads on board to save'); return; }
+    var presets=loadVideoPresets();
+    var defScale = state.scaleInfo ? state.scaleInfo.scaleName : (currentVideo.scale || 'Custom');
+    var sName = defScale + ' (' + state.layout.length + ' pads)';
+    presets[currentVideo.id] = {
+      layout: state.layout.slice(),
+      noteFreqs: Object.assign({}, state.noteFreqs),
+      scaleName: sName,
+      savedAt: Date.now()
+    };
+    storeVideoPresets(presets);
+    var badge=$('#videoPresetBadge');
+    if(badge){
+      badge.textContent = 'Scale: ' + sName + ' ⭐';
+      badge.classList.add('custom');
+    }
+    toast('Saved preset for ' + (currentVideo.title || 'this video') + '!');
+    renderVideoPlaylist(currentVideoTab);
+  }
+
+  function openVideo(track){
+    if(!track || !track.id) return;
+    currentVideo = track;
+    var drawer = $('#videoDrawer');
+    var iframe = $('#videoIframe');
+    var title = $('#videoTitle');
+    if(!drawer || !iframe) return;
+
+    drawer.style.display = 'block';
+    drawer.classList.remove('mini-mode');
+    var btnSize = $('#btnToggleVideoSize');
+    if(btnSize) btnSize.textContent = '🗕 Mini';
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + track.id + '?enablejsapi=1&autoplay=1&playsinline=1';
+    if(title) title.textContent = track.title + ' — ' + track.artist;
+    applyVideoPreset(track);
+  }
+
+  function closeVideo(){
+    var drawer = $('#videoDrawer');
+    var iframe = $('#videoIframe');
+    if(iframe) iframe.src = '';
+    if(drawer) drawer.style.display = 'none';
+    currentVideo = null;
+    toast('Closed video');
+  }
+
+  function toggleVideoSize(){
+    var drawer = $('#videoDrawer');
+    if(!drawer) return;
+    drawer.classList.toggle('mini-mode');
+    var isMini = drawer.classList.contains('mini-mode');
+    var btn = $('#btnToggleVideoSize');
+    if(btn) btn.textContent = isMini ? '🗖 Expand' : '🗕 Mini';
+    toast(isMini ? 'Video minimized (audio still playing)' : 'Video expanded');
+  }
+
+  function renderVideoPlaylist(tab){
+    currentVideoTab = tab || currentVideoTab;
+    var listEl = $('#videoList');
+    var customForm = $('#customVideoForm');
+    var tabs = document.querySelectorAll('.tab-btn[data-vtab]');
+    for(var j=0; j<tabs.length; j++){
+      tabs[j].classList.toggle('active', tabs[j].dataset.vtab === currentVideoTab);
+    }
+
+    if(currentVideoTab === 'custom'){
+      if(listEl) listEl.style.display = 'none';
+      if(customForm) customForm.style.display = 'block';
+      return;
+    }
+
+    if(customForm) customForm.style.display = 'none';
+    if(!listEl) return;
+    listEl.style.display = 'grid';
+
+    var tracks = VIDEO_PLAYLISTS[currentVideoTab] || [];
+    var presets = loadVideoPresets();
+    var html = '';
+    for(var i=0; i<tracks.length; i++){
+      var t = tracks[i];
+      var custom = presets[t.id];
+      var isAct = currentVideo && currentVideo.id === t.id;
+      var scaleLabel = custom ? (custom.scaleName + ' ⭐') : t.scale;
+      var thumb = 'https://img.youtube.com/vi/' + t.id + '/mqdefault.jpg';
+      html += '<div class="video-card' + (isAct ? ' active' : '') + '" data-vid="' + t.id + '">' +
+        '<img class="video-thumb" src="' + thumb + '" alt="' + t.title + '" loading="lazy">' +
+        '<div class="video-card-info">' +
+          '<div class="video-card-title">' + t.title + '</div>' +
+          '<div class="video-card-artist">' + t.artist + '</div>' +
+          '<span class="video-card-scale' + (custom ? ' custom' : '') + '">' + scaleLabel + '</span>' +
+        '</div>' +
+      '</div>';
+    }
+    listEl.innerHTML = html;
+
+    var cards = listEl.querySelectorAll('.video-card');
+    for(var k=0; k<cards.length; k++){
+      cards[k].addEventListener('click', function(){
+        var vid = this.dataset.vid;
+        var trk = findTrackById(vid);
+        if(trk){
+          openVideo(trk);
+          closeSheets();
+        }
+      });
+    }
+  }
+
+  function extractYouTubeId(url){
+    if(!url) return null;
+    var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+    return m ? m[1] : (url.trim().length === 11 ? url.trim() : null);
+  }
+
   btnListen.onclick=function(){
     ensureCtx();
     if(state.listening && state.listenMode==='listen'){
@@ -3528,6 +3807,71 @@ input[type=text]{width:100%;padding:13px;border-radius:14px;background:#fff;bord
     };
   }
   loadSavedAmbientNoise();
+
+  // Jam Video UI Wiring
+  var btnJamVideo = $('#btnJamVideo');
+  if(btnJamVideo){
+    btnJamVideo.onclick = function(){
+      renderVideoPlaylist();
+      openSheet('#sheetVideoPlaylist');
+    };
+  }
+  var btnVideoPlaylist = $('#btnVideoPlaylist');
+  if(btnVideoPlaylist){
+    btnVideoPlaylist.onclick = function(){
+      renderVideoPlaylist();
+      openSheet('#sheetVideoPlaylist');
+    };
+  }
+  var btnSavePreset = $('#btnSaveVideoPreset');
+  if(btnSavePreset){
+    btnSavePreset.onclick = function(){
+      saveCurrentAsVideoPreset();
+    };
+  }
+  var btnToggleSize = $('#btnToggleVideoSize');
+  if(btnToggleSize){
+    btnToggleSize.onclick = function(){
+      toggleVideoSize();
+    };
+  }
+  var btnCloseVid = $('#btnCloseVideo');
+  if(btnCloseVid){
+    btnCloseVid.onclick = function(){
+      closeVideo();
+    };
+  }
+  var btnLoadCustom = $('#btnLoadCustomVideo');
+  if(btnLoadCustom){
+    btnLoadCustom.onclick = function(){
+      var urlInput = $('#customVideoUrl');
+      var titleInput = $('#customVideoTitle');
+      var url = urlInput ? urlInput.value.trim() : '';
+      var yId = extractYouTubeId(url);
+      if(!yId){
+        toast('Please enter a valid YouTube link or 11-char ID');
+        return;
+      }
+      var tTitle = (titleInput && titleInput.value.trim()) || 'Custom Video (' + yId + ')';
+      var customTrack = {
+        id: yId,
+        title: tTitle,
+        artist: 'YouTube',
+        scale: state.scaleInfo ? state.scaleInfo.scaleName : 'Handpan',
+        midi: state.layout.length ? state.layout.slice() : [50,57,58,60,62,64,65,67,69]
+      };
+      openVideo(customTrack);
+      closeSheets();
+      if(urlInput) urlInput.value = '';
+      if(titleInput) titleInput.value = '';
+    };
+  }
+  var tabBtns = document.querySelectorAll('.tab-btn[data-vtab]');
+  for(var ti=0; ti<tabBtns.length; ti++){
+    tabBtns[ti].onclick = function(){
+      renderVideoPlaylist(this.dataset.vtab);
+    };
+  }
 
   $('#padWrap').addEventListener('pointerdown', function(ev){
     if(state.editNotes) return;
