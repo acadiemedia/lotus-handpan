@@ -1,0 +1,14 @@
+{
+  "B": 0.0003,
+  "weights": [
+    1,
+    0.9,
+    0.65,
+    0.45,
+    0.3
+  ],
+  "initialAcc": 92,
+  "calibratedAcc": 92,
+  "totalNotes": 24,
+  "calibratedAt": "2026-10-21T00:24:26.716Z"
+}
